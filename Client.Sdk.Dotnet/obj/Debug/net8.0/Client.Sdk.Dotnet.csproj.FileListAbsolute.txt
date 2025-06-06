@@ -1,0 +1,12 @@
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\Client.Sdk.Dotnet.csproj.AssemblyReference.cache
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\Client.Sdk.Dotnet.GeneratedMSBuildEditorConfig.editorconfig
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\bin\Debug\net8.0\Client.Sdk.Dotnet.deps.json
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\bin\Debug\net8.0\Client.Sdk.Dotnet.dll
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\bin\Debug\net8.0\Client.Sdk.Dotnet.pdb
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\Client.Sdk.Dotnet.AssemblyInfoInputs.cache
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\Client.Sdk.Dotnet.AssemblyInfo.cs
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\Client.Sdk.Dotnet.csproj.CoreCompileInputs.cache
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\Client.Sdk.Dotnet.dll
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\refint\Client.Sdk.Dotnet.dll
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\Client.Sdk.Dotnet.pdb
+E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\obj\Debug\net8.0\ref\Client.Sdk.Dotnet.dll
