@@ -8,7 +8,8 @@
     ".NETCoreApp,Version=v8.0": {
       "Client.Sdk.Dotnet.Example/1.0.0": {
         "dependencies": {
-          "Client.Sdk.Dotnet": "1.0.0"
+          "Client.Sdk.Dotnet": "1.0.0",
+          "SIPSorceryMedia.Encoders": "8.0.7"
         },
         "runtime": {
           "Client.Sdk.Dotnet.Example.dll": {}
@@ -246,6 +247,17 @@
           "lib/net8.0/SIPSorceryMedia.Abstractions.dll": {
             "assemblyVersion": "8.0.10.0",
             "fileVersion": "8.0.10.0"
+          }
+        }
+      },
+      "SIPSorceryMedia.Encoders/8.0.7": {
+        "dependencies": {
+          "SIPSorceryMedia.Abstractions": "8.0.10"
+        },
+        "runtime": {
+          "lib/netstandard2.0/SIPSorceryMedia.Encoders.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
           }
         }
       },
@@ -772,7 +784,7 @@
         },
         "runtime": {
           "Client.Sdk.Dotnet.dll": {
-            "assemblyVersion": "1.0.0.0",
+            "assemblyVersion": "1.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -1022,6 +1034,13 @@
       "sha512": "sha512-fQ+v/VHY9nuhtyTQJRKDYB1Fe26sOo6+4JbaQjm0GLRymRbL6Hz6YFbqG85/WjISGNm/2Y98eS9rJS4smZlNZA==",
       "path": "sipsorcerymedia.abstractions/8.0.10",
       "hashPath": "sipsorcerymedia.abstractions.8.0.10.nupkg.sha512"
+    },
+    "SIPSorceryMedia.Encoders/8.0.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-nfMqdeQCW0Z122QAbxpuQuanLtvF11a1QcsweAAv76Qo6lQglVLsKGoo9idVxxFU3U79r2afaFq/EMyNSe5phQ==",
+      "path": "sipsorcerymedia.encoders/8.0.7",
+      "hashPath": "sipsorcerymedia.encoders.8.0.7.nupkg.sha512"
     },
     "SIPSorceryMedia.FFmpeg/8.0.10": {
       "type": "package",

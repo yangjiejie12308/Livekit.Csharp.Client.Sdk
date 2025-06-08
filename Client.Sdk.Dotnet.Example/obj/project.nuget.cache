@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "PHF7DCSC82w=",
+  "dgSpecHash": "huj2S37zfpo=",
   "success": true,
-  "projectFilePath": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj",
+  "projectFilePath": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\smeb\\.nuget\\packages\\concentus\\2.2.2\\concentus.2.2.2.nupkg.sha512",
     "C:\\Users\\smeb\\.nuget\\packages\\directshowlib.standard\\2.1.0\\directshowlib.standard.2.1.0.nupkg.sha512",
@@ -38,6 +38,7 @@
     "C:\\Users\\smeb\\.nuget\\packages\\sipsorcery\\8.0.14\\sipsorcery.8.0.14.nupkg.sha512",
     "C:\\Users\\smeb\\.nuget\\packages\\sipsorcery.websocketsharp\\0.0.1\\sipsorcery.websocketsharp.0.0.1.nupkg.sha512",
     "C:\\Users\\smeb\\.nuget\\packages\\sipsorcerymedia.abstractions\\8.0.10\\sipsorcerymedia.abstractions.8.0.10.nupkg.sha512",
+    "C:\\Users\\smeb\\.nuget\\packages\\sipsorcerymedia.encoders\\8.0.7\\sipsorcerymedia.encoders.8.0.7.nupkg.sha512",
     "C:\\Users\\smeb\\.nuget\\packages\\sipsorcerymedia.ffmpeg\\8.0.10\\sipsorcerymedia.ffmpeg.8.0.10.nupkg.sha512",
     "C:\\Users\\smeb\\.nuget\\packages\\system.collections\\4.3.0\\system.collections.4.3.0.nupkg.sha512",
     "C:\\Users\\smeb\\.nuget\\packages\\system.collections.concurrent\\4.3.0\\system.collections.concurrent.4.3.0.nupkg.sha512",

@@ -1,13 +1,20 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Principal;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Client.Sdk.Dotnet.support.websocket;
 using Google.Protobuf;
 using LiveKit.Proto;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.Encoders;
+using WebSocketSharp;
 
 namespace Client.Sdk.Dotnet.Example
 {
@@ -24,10 +31,10 @@ namespace Client.Sdk.Dotnet.Example
 
         private RTCPeerConnection publisherPeerConnection;
 
-        private string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkyOTI2NTQsImlzcyI6IkFQSUtGZ3lVVmFHOWQ2ZiIsIm5hbWUiOiJ1c2VyMSIsIm5iZiI6MTc0OTIwNjI1NCwic3ViIjoidXNlcjEiLCJ2aWRlbyI6eyJyb29tIjoibXktZmlyc3Qtcm9vbSIsInJvb21Kb2luIjp0cnVlfX0.f4CjVKTxaGeLcwTTO4wGaf5xPBGQVRp46GxvVOnHgaA";
+        private string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkzOTAzMDEsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXIiLCJuYmYiOjE3NDkzMDM5MDEsInN1YiI6InRlc3RfdXNlciIsInZpZGVvIjp7InJvb20iOiJ0ZXN0X3Jvb20iLCJyb29tSm9pbiI6dHJ1ZX19.arOm2TufwhKx_1TFxSQ1hyNXC6Z1VdDbmHiFBk54Bec";
         private async Task connect()
         {
-            Uri uri = await buildUri("wss://livekit.zhiyuanchangda.xyz", token);
+            Uri uri = await buildUri("ws://127.0.0.1:7880", token);
             WebSocketIO = await LiveKitWebSocketIO.Connect(uri, new support.WebSocketEventHandlers(
                 onData: onData,
                 onError: onError,
@@ -35,7 +42,7 @@ namespace Client.Sdk.Dotnet.Example
                 ));
 
         }
-
+        
         private async Task<Uri> buildUri(string uriString, string token, bool reconnect = false,
             bool validate = false,
             bool forceSecure = false,
@@ -43,7 +50,7 @@ namespace Client.Sdk.Dotnet.Example
         {
             var uri = new Uri(uriString);
 
-            var useSecure = true;
+            var useSecure = false;
             var httpScheme = useSecure ? "https" : "http";
             var wsScheme = useSecure ? "wss" : "ws";
             var lastSegments = validate ? new[] { "rtc", "validate" } : new[] { "rtc" };
@@ -67,9 +74,9 @@ namespace Client.Sdk.Dotnet.Example
             var queryParams = new Dictionary<string, string>
             {
                 ["access_token"] = token,
-                ["auto_subscribe"] = "0",
+                ["auto_subscribe"] = "1",
                 ["adaptive_stream"] = "1",
-                ["protocol"] = "9",
+                ["protocol"] = "12",
                 ["sdk"] = "flutter",
                 ["version"] = "2.4.7",
                 ["network"] = networkType
@@ -91,17 +98,17 @@ namespace Client.Sdk.Dotnet.Example
                 if (!string.IsNullOrEmpty(clientInfo.Os))
                     queryParams["os"] = clientInfo.Os;
 
-                if (!string.IsNullOrEmpty(clientInfo.OsVersion))
-                    queryParams["os_version"] = clientInfo.OsVersion;
+                //if (!string.IsNullOrEmpty(clientInfo.OsVersion))
+                //    queryParams["os_version"] = clientInfo.OsVersion;
 
-                if (!string.IsNullOrEmpty(clientInfo.DeviceModel))
-                    queryParams["device_model"] = clientInfo.DeviceModel;
+                //if (!string.IsNullOrEmpty(clientInfo.DeviceModel))
+                //    queryParams["device_model"] = clientInfo.DeviceModel;
 
-                if (!string.IsNullOrEmpty(clientInfo.Browser))
-                    queryParams["browser"] = clientInfo.Browser;
+                //if (!string.IsNullOrEmpty(clientInfo.Browser))
+                //    queryParams["browser"] = clientInfo.Browser;
 
-                if (!string.IsNullOrEmpty(clientInfo.BrowserVersion))
-                    queryParams["browser_version"] = clientInfo.BrowserVersion;
+                //if (!string.IsNullOrEmpty(clientInfo.BrowserVersion))
+                //    queryParams["browser_version"] = clientInfo.BrowserVersion;
             }
 
             // 构建最终 URI
@@ -138,27 +145,137 @@ namespace Client.Sdk.Dotnet.Example
             {
                 iceServers = joinResponse.IceServers.Select(iceServer => new SIPSorcery.Net.RTCIceServer
                 {
-                    urls = iceServer.Urls.ToString(),
-                }).ToList()
+                    urls = JsonSerializer.Serialize(iceServer.Urls),
+                    username = iceServer.Username.IsNullOrEmpty()?null:iceServer.Username,
+                    credential = iceServer.Credential.IsNullOrEmpty() ? null : iceServer.Credential
+                }).ToList(),
             };
+
+            subscriberPeerConnection = new RTCPeerConnection(configuration);
+
+
+
+            //testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
+            //videoEncoderEndPoint.OnVideoSourceEncodedSample += subscriberPeerConnection.SendVideo;
+            //audioSource.OnAudioSourceEncodedSample += subscriberPeerConnection.SendAudio;
+
+            //subscriberPeerConnection.OnVideoFormatsNegotiated += (formats) => videoEncoderEndPoint.SetVideoSourceFormat(formats.First());
+            //subscriberPeerConnection.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
+
             // 创建发布者和订阅者的 PeerConnection
             publisherPeerConnection = new RTCPeerConnection(configuration);
-            subscriberPeerConnection = new RTCPeerConnection(configuration);
-            // 这里可以添加更多的事件处理逻辑，例如 ICE 连接状态变化等
 
-            var result = publisherPeerConnection.createOffer();
-            publisherPeerConnection.setLocalDescription(new RTCSessionDescriptionInit
+            var testPatternSource = new VideoTestPatternSource();
+            var videoEncoderEndPoint = new VideoEncoderEndPoint();
+            //var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+
+            MediaStreamTrack videoTrack = new MediaStreamTrack(videoEncoderEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            publisherPeerConnection.addTrack(videoTrack);
+            //MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            //publisherPeerConnection.addTrack(audioTrack);
+
+
+
+
+            subscriberPeerConnection.onicecandidate += async (candidate) =>
             {
-                type = SIPSorcery.Net.RTCSdpType.offer,
-                sdp = result.sdp
-            });
-            SignalRequest signalRequest = new SignalRequest();
-            signalRequest.Offer = new SessionDescription
-            {
-                Sdp = result.sdp,
-                Type = "offer"
+
+                    var trickleCandidate = new IceCandidate
+                    {
+                        candidate = "candidate:"+candidate.candidate,
+                        sdpMid = candidate.sdpMid ?? "0",
+                        sdpMLineIndex = candidate.sdpMLineIndex,
+                    };
+                    SignalRequest signalRequest = new SignalRequest
+                    {
+                        Trickle = new TrickleRequest
+                        {
+                            Target = SignalTarget.Subscriber,
+                            CandidateInit = JsonSerializer.Serialize(trickleCandidate),
+                        },
+                    };
+
+                    WebSocketIO.Send(signalRequest.ToByteArray());
             };
-            WebSocketIO.Send(signalRequest.ToByteArray());
+
+            subscriberPeerConnection.oniceconnectionstatechange += async (state) => {
+                if (state == RTCIceConnectionState.connected)
+                {
+                    SignalRequest signalRequest = new SignalRequest();
+                    AddTrackRequest addTrackRequest = new AddTrackRequest();
+                    addTrackRequest.Name = "默认音频轨道名字";
+                    addTrackRequest.Type = TrackType.Video;
+                    addTrackRequest.Source = TrackSource.Camera;
+                    addTrackRequest.Sid = joinResponse.Participant.Sid;
+                    addTrackRequest.Stream = "";
+                    addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
+                    signalRequest.AddTrack = addTrackRequest;
+                    WebSocketIO.Send(signalRequest.ToByteArray());
+                    Debug.WriteLine($"SubPeer Send AddTrackRequest: {addTrackRequest.ToString()}");
+                        var result2 = publisherPeerConnection.createOffer(null);
+                        SignalRequest signalRequest3 = new SignalRequest();
+                        signalRequest3.Offer = new SessionDescription
+                        {
+                            Sdp = result2.sdp,
+                            Type = "offer"
+                        };
+                        Debug.WriteLine($"PublishPeer Send Offer SDP: {signalRequest3.Offer.Sdp}");
+                        WebSocketIO.Send(signalRequest3.ToByteArray());
+                        await publisherPeerConnection.setLocalDescription(result2);
+                        publisherPeerConnection.restartIce();
+                }
+                else if (state == RTCIceConnectionState.failed)
+                {
+                    subscriberPeerConnection.Close("ice disconnection");
+                }
+                else if (state == RTCIceConnectionState.closed)
+                {
+                    // 连接关闭
+                }
+            };
+
+            publisherPeerConnection.onicecandidate += (candidate) =>
+            {
+                Debug.WriteLine(publisherPeerConnection.signalingState);
+                if (candidate == null || publisherPeerConnection.signalingState == RTCSignalingState.closed)
+                {
+                    return;
+                }
+                var trickleCandidate = new IceCandidate
+                {
+                    candidate = "candidate:" + candidate.candidate,
+                    sdpMid = candidate.sdpMid ?? "0",
+                    sdpMLineIndex = candidate.sdpMLineIndex,
+                };
+                SignalRequest signalRequest = new SignalRequest
+                {
+                    Trickle = new TrickleRequest
+                    {
+                        Target = SignalTarget.Publisher,
+                        CandidateInit = JsonSerializer.Serialize(trickleCandidate)
+                    },
+                };
+                Debug.WriteLine($"PulishbPeer Send ICE candidate: {signalRequest}");
+
+                WebSocketIO.Send(signalRequest.ToByteArray());
+            };
+            publisherPeerConnection.oniceconnectionstatechange += (state) =>
+            {
+                Debug.WriteLine($"PublishPeer ICE connection state change to {state}.");
+                if (state == RTCIceConnectionState.connected)
+                {
+                    // 连接成功
+
+                }
+                else if (state == RTCIceConnectionState.failed)
+                {
+                    publisherPeerConnection.Close("ice disconnection");
+                }
+                else if (state == RTCIceConnectionState.closed)
+                {
+                    // 连接关闭
+                }
+            };
         }
 
         private async void onData(byte[] data)
@@ -169,46 +286,66 @@ namespace Client.Sdk.Dotnet.Example
             {
                 case SignalResponse.MessageOneofCase.Join:
                     joinResponse = signalResponse.Join;
+                    Debug.WriteLine(joinResponse.ToString());
                     if (joinResponse != null)
                     {
                         // 创建 PeerConnection
                         createPeerConnection();
                         // 处理加入房间的响应
+                        _pingInterval = TimeSpan.FromSeconds(signalResponse.Join.PingInterval);
+                        _pingTimer = new System.Timers.Timer(_pingInterval); // 30秒发送一次Ping
+                        _pingTimer.Elapsed += async (sender, e) =>
+                        {
+                            SignalRequest pingRequest = new SignalRequest
+                            {
+                                Ping = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                            };
+                            WebSocketIO.Send(pingRequest.ToByteArray());
+                        };
+                        _pingTimer.Start();
                     }
                     // 处理加入房间的响应
+                    break;
+                case SignalResponse.MessageOneofCase.TrackPublished:
+                   
+                    break;
+                case SignalResponse.MessageOneofCase.Pong:
+                    _pingTimer.Start();
                     break;
                 case SignalResponse.MessageOneofCase.Offer:
                     if (subscriberPeerConnection == null)
                     {
                         createPeerConnection();
                     }
-                    var sdp = SDP.ParseSDPDescription(signalResponse.Offer.Sdp);
-                    var result = subscriberPeerConnection!.SetRemoteDescription(SIPSorcery.SIP.App.SdpType.offer, sdp);
-                    // 处理提供的媒体流
-                    if (result != SetDescriptionResultEnum.OK)
+                    //var sdp = SDP.ParseSDPDescription(signalResponse.Offer.Sdp);
+                    RTCSessionDescriptionInit rTCSessionDescriptionInit = new RTCSessionDescriptionInit();
+                    rTCSessionDescriptionInit.sdp = signalResponse.Offer.Sdp;
+                    rTCSessionDescriptionInit.type = RTCSdpType.offer;
+                    var result = subscriberPeerConnection!.setRemoteDescription(rTCSessionDescriptionInit);
+                   
+                    if (result == SetDescriptionResultEnum.OK)
                     {
-                        var answer = subscriberPeerConnection!.createAnswer();
-                        await subscriberPeerConnection.setLocalDescription(new RTCSessionDescriptionInit
-                        {
-                            type = SIPSorcery.Net.RTCSdpType.answer,
-                            sdp = answer.sdp
-                        });
+                        var answer = subscriberPeerConnection.createAnswer();
                         SignalRequest signalRequest = new SignalRequest();
                         signalRequest.Answer = new SessionDescription
                         {
                             Sdp = answer.sdp,
-                            Type = "answer"
+                            Type = "answer",
                         };
                         WebSocketIO.Send(signalRequest.ToByteArray());
+                        await subscriberPeerConnection.setLocalDescription(answer);
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Failed to set remote description for subscriber.");
                     }
                     break;
                 case SignalResponse.MessageOneofCase.Answer:
-                    if (publisherPeerConnection == null)
-                    {
-                        createPeerConnection();
-                    }
-                    var answerSdp = SDP.ParseSDPDescription(signalResponse.Answer.Sdp);
-                    var answerResult = publisherPeerConnection!.SetRemoteDescription(SIPSorcery.SIP.App.SdpType.answer, answerSdp);
+                    Debug.WriteLine($"Received Answer SDP: {signalResponse.Answer.ToString()}");
+                    RTCSessionDescriptionInit rTCSessionDescriptionInit2 = new RTCSessionDescriptionInit();
+                    rTCSessionDescriptionInit2.sdp = signalResponse.Answer.Sdp;
+                    rTCSessionDescriptionInit2.type = RTCSdpType.answer;
+                    var answerResult = publisherPeerConnection!.setRemoteDescription(rTCSessionDescriptionInit2);
                     if (answerResult != SetDescriptionResultEnum.OK)
                     {
                         Debug.WriteLine("Failed to set remote description for publisher.");
@@ -241,7 +378,9 @@ namespace Client.Sdk.Dotnet.Example
                     await WebSocketIO.DisposeAsync();
                     break;
                 case SignalResponse.MessageOneofCase.Trickle:
-                    if (publisherPeerConnection == null || subscriberPeerConnection == null)
+                    if (
+                        //publisherPeerConnection == null ||
+                        subscriberPeerConnection == null)
                     {
                         Debug.WriteLine("Peer connections are not initialized.");
                         return;
@@ -250,30 +389,51 @@ namespace Client.Sdk.Dotnet.Example
                     {
                         if (signalResponse.Trickle.Target == SignalTarget.Subscriber)
                         {
-                            var trickleCandidate = new RTCIceCandidateInit
+                            var jsObj = JsonSerializer.Deserialize<IceCandidate>(signalResponse.Trickle.CandidateInit);
+                            var trickleCandidate =  new RTCIceCandidateInit
                             {
-                                candidate = signalResponse.Trickle.CandidateInit,
+                                candidate = jsObj.candidate.Replace("candidate:",""),
+                                sdpMid = jsObj.sdpMid,
+                                sdpMLineIndex = jsObj.sdpMLineIndex
                             };
                             subscriberPeerConnection.addIceCandidate(trickleCandidate);
+
+                            if (signalResponse.Trickle.Final)
+                            {
+                               
+                            }
+
                         }
-                        else if (signalResponse.Trickle.Target == SignalTarget.Publisher)
+                        else 
                         {
+                            Debug.WriteLine($"{signalResponse.ToString()}");
+                            var jsObj = JsonSerializer.Deserialize<IceCandidate>(signalResponse.Trickle.CandidateInit);
                             var trickleCandidate = new RTCIceCandidateInit
                             {
-                                candidate = signalResponse.Trickle.CandidateInit,
+                                candidate = jsObj.candidate.Replace("candidate:", ""),
+                                sdpMid = jsObj.sdpMid??"0",
+                                sdpMLineIndex = jsObj.sdpMLineIndex
                             };
                             publisherPeerConnection.addIceCandidate(trickleCandidate);
                         }
                     }
-                    break;
-                case SignalResponse.MessageOneofCase.Pong:
-                    // 处理自定义数据消息
                     break;
                 case SignalResponse.MessageOneofCase.Reconnect:
                     // 处理重连请求
                     Debug.WriteLine("Received reconnect signal, attempting to reconnect...");
                     break;
             }
+        }
+
+        private System.Timers.Timer? _pingTimer;
+        private  TimeSpan _pingInterval ;
+
+
+        public class IceCandidate
+        {
+            public string candidate { get; set; }
+            public string sdpMid { get; set; }
+            public ushort sdpMLineIndex { get; set; }
         }
 
         /// <summary>
@@ -352,7 +512,7 @@ namespace Client.Sdk.Dotnet.Example
                     RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     // 假设默认是有线连接，实际应通过NetworkInterface API检测
-                    return "wired";
+                    return "wifi";
                 }
 
                 return "empty";

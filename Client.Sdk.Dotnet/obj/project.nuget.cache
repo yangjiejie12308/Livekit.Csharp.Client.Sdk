@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "PN1RDBLRdvI=",
+  "dgSpecHash": "HnTf8y0okeo=",
   "success": true,
-  "projectFilePath": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj",
+  "projectFilePath": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\smeb\\.nuget\\packages\\concentus\\2.2.2\\concentus.2.2.2.nupkg.sha512",
     "C:\\Users\\smeb\\.nuget\\packages\\directshowlib.standard\\2.1.0\\directshowlib.standard.2.1.0.nupkg.sha512",

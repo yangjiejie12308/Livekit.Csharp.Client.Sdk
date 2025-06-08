@@ -454,6 +454,21 @@
           }
         }
       },
+      "SIPSorceryMedia.Encoders/8.0.7": {
+        "type": "package",
+        "dependencies": {
+          "SIPSorceryMedia.Abstractions": "8.0.7"
+        },
+        "compile": {
+          "lib/netstandard2.0/SIPSorceryMedia.Encoders.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/SIPSorceryMedia.Encoders.dll": {}
+        },
+        "build": {
+          "build/SIPSorceryMedia.Encoders.targets": {}
+        }
+      },
       "SIPSorceryMedia.FFmpeg/8.0.10": {
         "type": "package",
         "dependencies": {
@@ -2102,6 +2117,23 @@
         "lib/netstandard2.1/SIPSorceryMedia.Abstractions.xml",
         "sipsorcerymedia.abstractions.8.0.10.nupkg.sha512",
         "sipsorcerymedia.abstractions.nuspec"
+      ]
+    },
+    "SIPSorceryMedia.Encoders/8.0.7": {
+      "sha512": "nfMqdeQCW0Z122QAbxpuQuanLtvF11a1QcsweAAv76Qo6lQglVLsKGoo9idVxxFU3U79r2afaFq/EMyNSe5phQ==",
+      "type": "package",
+      "path": "sipsorcerymedia.encoders/8.0.7",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/SIPSorceryMedia.Encoders.targets",
+        "build/x64/vpxmd.dll",
+        "build/x86/vpxmd.dll",
+        "icon.png",
+        "lib/net461/SIPSorceryMedia.Encoders.dll",
+        "lib/netstandard2.0/SIPSorceryMedia.Encoders.dll",
+        "sipsorcerymedia.encoders.8.0.7.nupkg.sha512",
+        "sipsorcerymedia.encoders.nuspec"
       ]
     },
     "SIPSorceryMedia.FFmpeg/8.0.10": {
@@ -4600,47 +4632,45 @@
   },
   "projectFileDependencyGroups": {
     "net8.0-windows7.0": [
-      "Client.Sdk.Dotnet >= 1.0.0"
+      "Client.Sdk.Dotnet >= 1.0.0",
+      "SIPSorceryMedia.Encoders >= 8.0.7",
+      "SIPSorceryMedia.FFmpeg >= 8.0.10"
     ]
   },
   "packageFolders": {
     "C:\\Users\\smeb\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {},
-    "C:\\Program Files (x86)\\Syncfusion\\Essential Studio\\WPF\\25.1.35\\ToolboxNuGetPackages": {}
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj",
+      "projectUniqueName": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj",
       "projectName": "Client.Sdk.Dotnet.Example",
-      "projectPath": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj",
+      "projectPath": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj",
       "packagesPath": "C:\\Users\\smeb\\.nuget\\packages\\",
-      "outputPath": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet.Example\\obj\\",
+      "outputPath": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet.Example\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-        "C:\\Program Files (x86)\\Syncfusion\\Essential Studio\\WPF\\25.1.35\\ToolboxNuGetPackages"
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
         "C:\\Users\\smeb\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Syncfusion Toolbox for WPF.config"
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0-windows"
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files (x86)\\Syncfusion\\Essential Studio\\WPF\\25.1.35\\ToolboxNuGetPackages\\syncfusion.ui.wpf.net": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "projectReferences": {
-            "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj": {
-              "projectPath": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj"
+            "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj": {
+              "projectPath": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj"
             }
           }
         }
@@ -4655,11 +4685,21 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.200"
+      "SdkAnalysisLevel": "9.0.100"
     },
     "frameworks": {
       "net8.0-windows7.0": {
         "targetAlias": "net8.0-windows",
+        "dependencies": {
+          "SIPSorceryMedia.Encoders": {
+            "target": "Package",
+            "version": "[8.0.7, )"
+          },
+          "SIPSorceryMedia.FFmpeg": {
+            "target": "Package",
+            "version": "[8.0.10, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",
@@ -4679,7 +4719,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

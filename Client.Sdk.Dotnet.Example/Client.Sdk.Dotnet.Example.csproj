@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Client.Sdk.Dotnet\Client.Sdk.Dotnet.csproj" />
   </ItemGroup>
 

@@ -71,7 +71,7 @@ namespace Client.Sdk.Dotnet.support.websocket
 
         private async Task ReceiveLoop()
         {
-            var buffer = new byte[4096];
+            var buffer = new byte[16*1024];
 
             try
             {
@@ -140,7 +140,7 @@ namespace Client.Sdk.Dotnet.support.websocket
                     new ArraySegment<byte>(data),
                     WebSocketMessageType.Binary,
                     true,
-                    CancellationToken.None).Wait();
+                    CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

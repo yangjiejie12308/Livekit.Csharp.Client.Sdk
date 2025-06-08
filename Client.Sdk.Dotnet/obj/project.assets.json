@@ -4644,34 +4644,30 @@
   },
   "packageFolders": {
     "C:\\Users\\smeb\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {},
-    "C:\\Program Files (x86)\\Syncfusion\\Essential Studio\\WPF\\25.1.35\\ToolboxNuGetPackages": {}
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj",
+      "projectUniqueName": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj",
       "projectName": "Client.Sdk.Dotnet",
-      "projectPath": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj",
+      "projectPath": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj",
       "packagesPath": "C:\\Users\\smeb\\.nuget\\packages\\",
-      "outputPath": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet\\obj\\",
+      "outputPath": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-        "C:\\Program Files (x86)\\Syncfusion\\Essential Studio\\WPF\\25.1.35\\ToolboxNuGetPackages"
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
         "C:\\Users\\smeb\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Syncfusion Toolbox for WPF.config"
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files (x86)\\Syncfusion\\Essential Studio\\WPF\\25.1.35\\ToolboxNuGetPackages\\syncfusion.ui.wpf.net": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -4690,7 +4686,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.200"
+      "SdkAnalysisLevel": "9.0.100"
     },
     "frameworks": {
       "net8.0": {
@@ -4739,7 +4735,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -1,0 +1,3 @@
+obj\Release\net8.0\Proto/LivekitModels.cs: C:/Users/smeb/.nuget/packages/grpc.tools/2.72.0/build/native/include/google/protobuf/timestamp.proto\
+ Proto/livekit_metrics.proto\
+ Proto/livekit_models.proto
