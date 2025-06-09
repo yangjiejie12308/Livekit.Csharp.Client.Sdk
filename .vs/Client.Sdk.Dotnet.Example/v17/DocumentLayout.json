@@ -1,13 +1,13 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\",
+  "WorkspaceRootPath": "E:\\TDG\\client-sdk-dotnet\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{E9FE780A-3E1B-43F0-A8D1-C47446443994}|Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj|c:\\users\\smeb\\desktop\\livekit-sdk-dotnet\\client.sdk.dotnet.example\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{E9FE780A-3E1B-43F0-A8D1-C47446443994}|Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj|e:\\tdg\\client-sdk-dotnet\\client.sdk.dotnet.example\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E9FE780A-3E1B-43F0-A8D1-C47446443994}|Client.Sdk.Dotnet.Example\\Client.Sdk.Dotnet.Example.csproj|solutionrelative:client.sdk.dotnet.example\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C7800332-3100-4D03-9C93-BFB72D7B006D}|Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj|c:\\users\\smeb\\desktop\\livekit-sdk-dotnet\\client.sdk.dotnet\\support\\websocket\\io.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{C7800332-3100-4D03-9C93-BFB72D7B006D}|Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj|e:\\tdg\\client-sdk-dotnet\\client.sdk.dotnet\\support\\websocket\\io.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C7800332-3100-4D03-9C93-BFB72D7B006D}|Client.Sdk.Dotnet\\Client.Sdk.Dotnet.csproj|solutionrelative:client.sdk.dotnet\\support\\websocket\\io.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -24,9 +24,9 @@
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "IO.cs",
-              "DocumentMoniker": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet\\support\\websocket\\IO.cs",
+              "DocumentMoniker": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet\\support\\websocket\\IO.cs",
               "RelativeDocumentMoniker": "Client.Sdk.Dotnet\\support\\websocket\\IO.cs",
-              "ToolTip": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet\\support\\websocket\\IO.cs",
+              "ToolTip": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet\\support\\websocket\\IO.cs",
               "RelativeToolTip": "Client.Sdk.Dotnet\\support\\websocket\\IO.cs",
               "ViewState": "AgIAAEMAAAAAAAAAAAAEwEkAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -36,11 +36,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "Form1.cs",
-              "DocumentMoniker": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Form1.cs",
+              "DocumentMoniker": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Form1.cs",
               "RelativeDocumentMoniker": "Client.Sdk.Dotnet.Example\\Form1.cs",
-              "ToolTip": "C:\\Users\\smeb\\Desktop\\livekit-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Form1.cs",
+              "ToolTip": "E:\\TDG\\client-sdk-dotnet\\Client.Sdk.Dotnet.Example\\Form1.cs",
               "RelativeToolTip": "Client.Sdk.Dotnet.Example\\Form1.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKwAAAA5AAAAAAAAAA==",
+              "ViewState": "AgIAAIcBAAAAAAAAAAAgwNgBAABLAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-06T13:22:17.586Z",
               "EditorCaption": ""
