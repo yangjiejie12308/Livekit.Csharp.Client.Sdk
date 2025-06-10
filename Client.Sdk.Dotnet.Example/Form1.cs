@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Client.Sdk.Dotnet.hardware;
 using Client.Sdk.Dotnet.support.websocket;
 using Google.Protobuf;
 using LiveKit.Proto;
@@ -23,7 +24,10 @@ namespace Client.Sdk.Dotnet.Example
         public Form1()
         {
             InitializeComponent();
-            connect();
+            //connect();
+            HardWare hardWare = new HardWare();
+            var list = hardWare.GetAllScreen();
+            var list2 = hardWare.GetAllCamera();
         }
         private LiveKitWebSocketIO WebSocketIO;
 
@@ -42,7 +46,7 @@ namespace Client.Sdk.Dotnet.Example
                 ));
 
         }
-        
+
         private async Task<Uri> buildUri(string uriString, string token, bool reconnect = false,
             bool validate = false,
             bool forceSecure = false,
@@ -146,7 +150,7 @@ namespace Client.Sdk.Dotnet.Example
                 iceServers = joinResponse.IceServers.Select(iceServer => new SIPSorcery.Net.RTCIceServer
                 {
                     urls = JsonSerializer.Serialize(iceServer.Urls),
-                    username = iceServer.Username.IsNullOrEmpty()?null:iceServer.Username,
+                    username = iceServer.Username.IsNullOrEmpty() ? null : iceServer.Username,
                     credential = iceServer.Credential.IsNullOrEmpty() ? null : iceServer.Credential
                 }).ToList(),
             };
@@ -180,25 +184,26 @@ namespace Client.Sdk.Dotnet.Example
             subscriberPeerConnection.onicecandidate += async (candidate) =>
             {
 
-                    var trickleCandidate = new IceCandidate
+                var trickleCandidate = new IceCandidate
+                {
+                    candidate = "candidate:" + candidate.candidate,
+                    sdpMid = candidate.sdpMid ?? "0",
+                    sdpMLineIndex = candidate.sdpMLineIndex,
+                };
+                SignalRequest signalRequest = new SignalRequest
+                {
+                    Trickle = new TrickleRequest
                     {
-                        candidate = "candidate:"+candidate.candidate,
-                        sdpMid = candidate.sdpMid ?? "0",
-                        sdpMLineIndex = candidate.sdpMLineIndex,
-                    };
-                    SignalRequest signalRequest = new SignalRequest
-                    {
-                        Trickle = new TrickleRequest
-                        {
-                            Target = SignalTarget.Subscriber,
-                            CandidateInit = JsonSerializer.Serialize(trickleCandidate),
-                        },
-                    };
+                        Target = SignalTarget.Subscriber,
+                        CandidateInit = JsonSerializer.Serialize(trickleCandidate),
+                    },
+                };
 
-                    WebSocketIO.Send(signalRequest.ToByteArray());
+                WebSocketIO.Send(signalRequest.ToByteArray());
             };
 
-            subscriberPeerConnection.oniceconnectionstatechange += async (state) => {
+            subscriberPeerConnection.oniceconnectionstatechange += async (state) =>
+            {
                 if (state == RTCIceConnectionState.connected)
                 {
                     SignalRequest signalRequest = new SignalRequest();
@@ -212,17 +217,17 @@ namespace Client.Sdk.Dotnet.Example
                     signalRequest.AddTrack = addTrackRequest;
                     WebSocketIO.Send(signalRequest.ToByteArray());
                     Debug.WriteLine($"SubPeer Send AddTrackRequest: {addTrackRequest.ToString()}");
-                        var result2 = publisherPeerConnection.createOffer(null);
-                        SignalRequest signalRequest3 = new SignalRequest();
-                        signalRequest3.Offer = new SessionDescription
-                        {
-                            Sdp = result2.sdp,
-                            Type = "offer"
-                        };
-                        Debug.WriteLine($"PublishPeer Send Offer SDP: {signalRequest3.Offer.Sdp}");
-                        WebSocketIO.Send(signalRequest3.ToByteArray());
-                        await publisherPeerConnection.setLocalDescription(result2);
-                        publisherPeerConnection.restartIce();
+                    var result2 = publisherPeerConnection.createOffer(null);
+                    SignalRequest signalRequest3 = new SignalRequest();
+                    signalRequest3.Offer = new SessionDescription
+                    {
+                        Sdp = result2.sdp,
+                        Type = "offer"
+                    };
+                    Debug.WriteLine($"PublishPeer Send Offer SDP: {signalRequest3.Offer.Sdp}");
+                    WebSocketIO.Send(signalRequest3.ToByteArray());
+                    await publisherPeerConnection.setLocalDescription(result2);
+                    publisherPeerConnection.restartIce();
                 }
                 else if (state == RTCIceConnectionState.failed)
                 {
@@ -307,7 +312,7 @@ namespace Client.Sdk.Dotnet.Example
                     // 处理加入房间的响应
                     break;
                 case SignalResponse.MessageOneofCase.TrackPublished:
-                   
+
                     break;
                 case SignalResponse.MessageOneofCase.Pong:
                     _pingTimer.Start();
@@ -322,7 +327,7 @@ namespace Client.Sdk.Dotnet.Example
                     rTCSessionDescriptionInit.sdp = signalResponse.Offer.Sdp;
                     rTCSessionDescriptionInit.type = RTCSdpType.offer;
                     var result = subscriberPeerConnection!.setRemoteDescription(rTCSessionDescriptionInit);
-                   
+
                     if (result == SetDescriptionResultEnum.OK)
                     {
                         var answer = subscriberPeerConnection.createAnswer();
@@ -390,9 +395,9 @@ namespace Client.Sdk.Dotnet.Example
                         if (signalResponse.Trickle.Target == SignalTarget.Subscriber)
                         {
                             var jsObj = JsonSerializer.Deserialize<IceCandidate>(signalResponse.Trickle.CandidateInit);
-                            var trickleCandidate =  new RTCIceCandidateInit
+                            var trickleCandidate = new RTCIceCandidateInit
                             {
-                                candidate = jsObj.candidate.Replace("candidate:",""),
+                                candidate = jsObj.candidate.Replace("candidate:", ""),
                                 sdpMid = jsObj.sdpMid,
                                 sdpMLineIndex = jsObj.sdpMLineIndex
                             };
@@ -400,18 +405,18 @@ namespace Client.Sdk.Dotnet.Example
 
                             if (signalResponse.Trickle.Final)
                             {
-                               
+
                             }
 
                         }
-                        else 
+                        else
                         {
                             Debug.WriteLine($"{signalResponse.ToString()}");
                             var jsObj = JsonSerializer.Deserialize<IceCandidate>(signalResponse.Trickle.CandidateInit);
                             var trickleCandidate = new RTCIceCandidateInit
                             {
                                 candidate = jsObj.candidate.Replace("candidate:", ""),
-                                sdpMid = jsObj.sdpMid??"0",
+                                sdpMid = jsObj.sdpMid ?? "0",
                                 sdpMLineIndex = jsObj.sdpMLineIndex
                             };
                             publisherPeerConnection.addIceCandidate(trickleCandidate);
@@ -426,7 +431,7 @@ namespace Client.Sdk.Dotnet.Example
         }
 
         private System.Timers.Timer? _pingTimer;
-        private  TimeSpan _pingInterval ;
+        private TimeSpan _pingInterval;
 
 
         public class IceCandidate
