@@ -24,10 +24,10 @@ namespace Client.Sdk.Dotnet.Example
         public Form1()
         {
             InitializeComponent();
-            //connect();
-            HardWare hardWare = new HardWare();
-            var list = hardWare.GetAllScreen();
-            var list2 = hardWare.GetAllCamera();
+            connect();
+            //HardWare hardWare = new HardWare();
+            //var list = hardWare.GetAllScreen();
+            //var list2 = hardWare.GetAllCamera();
         }
         private LiveKitWebSocketIO WebSocketIO;
 
@@ -35,7 +35,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private RTCPeerConnection publisherPeerConnection;
 
-        private string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkzOTAzMDEsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXIiLCJuYmYiOjE3NDkzMDM5MDEsInN1YiI6InRlc3RfdXNlciIsInZpZGVvIjp7InJvb20iOiJ0ZXN0X3Jvb20iLCJyb29tSm9pbiI6dHJ1ZX19.arOm2TufwhKx_1TFxSQ1hyNXC6Z1VdDbmHiFBk54Bec";
+        private string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk4MDIwNjAsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXIxIiwibmJmIjoxNzQ5NzE1NjYwLCJzdWIiOiJ0ZXN0X3VzZXIxIiwidmlkZW8iOnsicm9vbSI6InRlc3Rfcm9vbSIsInJvb21Kb2luIjp0cnVlfX0.QLCcOqxLVDvkhFv2Cs87_bundrojWeG6D5EBv3niI9w";
         private async Task connect()
         {
             Uri uri = await buildUri("ws://127.0.0.1:7880", token);
@@ -289,40 +289,11 @@ namespace Client.Sdk.Dotnet.Example
             Debug.WriteLine($"Received signal : {signalResponse?.MessageCase}");
             switch (signalResponse.MessageCase)
             {
-                case SignalResponse.MessageOneofCase.Join:
-                    joinResponse = signalResponse.Join;
-                    Debug.WriteLine(joinResponse.ToString());
-                    if (joinResponse != null)
-                    {
-                        // 创建 PeerConnection
-                        createPeerConnection();
-                        // 处理加入房间的响应
-                        _pingInterval = TimeSpan.FromSeconds(signalResponse.Join.PingInterval);
-                        _pingTimer = new System.Timers.Timer(_pingInterval); // 30秒发送一次Ping
-                        _pingTimer.Elapsed += async (sender, e) =>
-                        {
-                            SignalRequest pingRequest = new SignalRequest
-                            {
-                                Ping = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-                            };
-                            WebSocketIO.Send(pingRequest.ToByteArray());
-                        };
-                        _pingTimer.Start();
-                    }
-                    // 处理加入房间的响应
-                    break;
-                case SignalResponse.MessageOneofCase.TrackPublished:
-
-                    break;
-                case SignalResponse.MessageOneofCase.Pong:
-                    _pingTimer.Start();
-                    break;
                 case SignalResponse.MessageOneofCase.Offer:
                     if (subscriberPeerConnection == null)
                     {
                         createPeerConnection();
                     }
-                    //var sdp = SDP.ParseSDPDescription(signalResponse.Offer.Sdp);
                     RTCSessionDescriptionInit rTCSessionDescriptionInit = new RTCSessionDescriptionInit();
                     rTCSessionDescriptionInit.sdp = signalResponse.Offer.Sdp;
                     rTCSessionDescriptionInit.type = RTCSdpType.offer;
@@ -346,7 +317,6 @@ namespace Client.Sdk.Dotnet.Example
                     }
                     break;
                 case SignalResponse.MessageOneofCase.Answer:
-                    Debug.WriteLine($"Received Answer SDP: {signalResponse.Answer.ToString()}");
                     RTCSessionDescriptionInit rTCSessionDescriptionInit2 = new RTCSessionDescriptionInit();
                     rTCSessionDescriptionInit2.sdp = signalResponse.Answer.Sdp;
                     rTCSessionDescriptionInit2.type = RTCSdpType.answer;
@@ -356,12 +326,30 @@ namespace Client.Sdk.Dotnet.Example
                         Debug.WriteLine("Failed to set remote description for publisher.");
                     }
                     break;
-                case SignalResponse.MessageOneofCase.RefreshToken:
-                    // 处理刷新令牌的响应
-                    token = signalResponse.RefreshToken;
+                case SignalResponse.MessageOneofCase.Join:
+                    joinResponse = signalResponse.Join;
+                    Debug.WriteLine(joinResponse.ToString());
+                    if (joinResponse != null)
+                    {
+                        // 创建 PeerConnection
+                        createPeerConnection();
+                        // 处理加入房间的响应
+                        _pingInterval = TimeSpan.FromSeconds(signalResponse.Join.PingInterval);
+                        _pingTimer = new System.Timers.Timer(_pingInterval); // 30秒发送一次Ping
+                        _pingTimer.Elapsed += async (sender, e) =>
+                        {
+                            SignalRequest pingRequest = new SignalRequest
+                            {
+                                Ping = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                            };
+                            WebSocketIO.Send(pingRequest.ToByteArray());
+                        };
+                        _pingTimer.Start();
+                    }
+                    // 处理加入房间的响应
                     break;
-                case SignalResponse.MessageOneofCase.RoomUpdate:
-
+                case SignalResponse.MessageOneofCase.Pong:
+                    _pingTimer.Start();
                     break;
                 case SignalResponse.MessageOneofCase.Leave:
                     Debug.WriteLine($"Received leave signal, disposing WebSocketIO.{signalResponse.Leave.ToString()}");
@@ -423,9 +411,56 @@ namespace Client.Sdk.Dotnet.Example
                         }
                     }
                     break;
+                case SignalResponse.MessageOneofCase.TrackPublished:
+                    HandleTrackPublishedEvent(signalResponse.TrackPublished.Cid, signalResponse.TrackPublished.Track);
+                    break;
+                case SignalResponse.MessageOneofCase.RefreshToken:
+                    // 处理刷新令牌的响应
+                    token = signalResponse.RefreshToken;
+                    break;
+                case SignalResponse.MessageOneofCase.RoomUpdate:
+                    roomUpdate(signalResponse.RoomUpdate.Room);
+                    break;
+                case SignalResponse.MessageOneofCase.Update:
+                    // 处理房间更新的响应
+
+                    break;
+                case SignalResponse.MessageOneofCase.TrackUnpublished:
+                    HandleTrackUnPublishedEvent(signalResponse.TrackUnpublished.TrackSid);
+                    break;
+                case SignalResponse.MessageOneofCase.TrackSubscribed:
+                    HandleTrackSubscribed(signalResponse.TrackSubscribed.TrackSid);
+                    break;
+                case SignalResponse.MessageOneofCase.SpeakersChanged:
+                    // 处理扬声器变化的响应
+                    HandleSpeakerChanged(signalResponse.SpeakersChanged.Speakers.ToList());
+                    break;
+                case SignalResponse.MessageOneofCase.ConnectionQuality:
+                    connectionQuality(signalResponse.ConnectionQuality.Updates.ToList());
+                    break;
+                case SignalResponse.MessageOneofCase.Mute:
+                    mute(signalResponse.Mute.Sid, signalResponse.Mute.Muted);
+                    break;
+                case SignalResponse.MessageOneofCase.StreamStateUpdate:
+                    // 处理流状态更新的响应
+                    streamStateUpdate(signalResponse.StreamStateUpdate.StreamStates.ToList());
+                    break;
+                case SignalResponse.MessageOneofCase.SubscribedQualityUpdate:
+                    subscribedQualityUpdate(
+                        signalResponse.SubscribedQualityUpdate.TrackSid,
+                        signalResponse.SubscribedQualityUpdate.SubscribedQualities.ToList(),
+                        signalResponse.SubscribedQualityUpdate.SubscribedCodecs.ToList());
+
+                    // 处理订阅质量更新的响应
+                    break;
+                case SignalResponse.MessageOneofCase.SubscriptionPermissionUpdate:
+                    subscriptionPermissionUpdate(
+                        signalResponse.SubscriptionPermissionUpdate.ParticipantSid,
+                        signalResponse.SubscriptionPermissionUpdate.TrackSid,
+                        signalResponse.SubscriptionPermissionUpdate.Allowed);
+                    break;
                 case SignalResponse.MessageOneofCase.Reconnect:
                     // 处理重连请求
-                    Debug.WriteLine("Received reconnect signal, attempting to reconnect...");
                     break;
             }
         }
@@ -434,6 +469,27 @@ namespace Client.Sdk.Dotnet.Example
         private TimeSpan _pingInterval;
 
 
+        private void HandleTrackPublishedEvent(string cid, TrackInfo info) { }
+
+        private void HandleTrackUnPublishedEvent(string cid) { }
+
+        private void HandleTrackSubscribed(string trackSid) { }
+
+        private void HandleSpeakerChanged(List<SpeakerInfo> speakers) { }
+
+        private void roomUpdate(Room room) { }
+
+        private void connectionQuality(List<ConnectionQualityInfo> connectionQualities) { }
+
+        private void leave(LeaveRequest leave) { }
+
+        private void mute(string sid, bool mute) { }
+
+        private void streamStateUpdate(List<StreamStateInfo> streamStateInfos) { }
+
+        private void subscribedQualityUpdate(string sid, List<SubscribedQuality> subscribedQualities, List<SubscribedCodec> subscribedCodecs) { }
+
+        private void subscriptionPermissionUpdate(string participantSid, string trackSid, bool allowed) { }
         public class IceCandidate
         {
             public string candidate { get; set; }
