@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
@@ -7,10 +8,12 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 using Client.Sdk.Dotnet.hardware;
 using Client.Sdk.Dotnet.support.websocket;
 using Google.Protobuf;
 using LiveKit.Proto;
+using Org.BouncyCastle.Asn1.X509;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
@@ -21,14 +24,66 @@ namespace Client.Sdk.Dotnet.Example
 {
     public partial class Form1 : Form
     {
+        private Bitmap? _webrtcBitmap;
+        private readonly object _bitmapLock = new();
         public Form1()
         {
             InitializeComponent();
+            this.webrtcPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.webrtcPanel_Paint);
             connect();
             //HardWare hardWare = new HardWare();
             //var list = hardWare.GetAllScreen();
             //var list2 = hardWare.GetAllCamera();
         }
+
+        private void webrtcPanel_Paint(object? sender, PaintEventArgs e)
+        {
+            lock (_bitmapLock)
+            {
+                if (_webrtcBitmap != null)
+                {
+                    // 保持比例居中绘制
+                    var destRect = GetFitRect(_webrtcBitmap.Width, _webrtcBitmap.Height, webrtcPanel.Width, webrtcPanel.Height);
+                    e.Graphics.DrawImage(_webrtcBitmap, destRect);
+                }
+            }
+        }
+
+        // 计算等比缩放后的目标矩形
+        private Rectangle GetFitRect(int srcW, int srcH, int destW, int destH)
+        {
+            float ratio = Math.Min((float)destW / srcW, (float)destH / srcH);
+            int w = (int)(srcW * ratio);
+            int h = (int)(srcH * ratio);
+            int x = (destW - w) / 2;
+            int y = (destH - h) / 2;
+            return new Rectangle(x, y, w, h);
+        }
+
+        public void RenderWebRTCFrame(byte[] frameData, int width, int height)
+        {
+            var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var bmpData = bmp.LockBits(
+                new Rectangle(0, 0, width, height),
+                System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                bmp.PixelFormat);
+
+            System.Runtime.InteropServices.Marshal.Copy(frameData, 0, bmpData.Scan0, frameData.Length);
+            bmp.UnlockBits(bmpData);
+
+            // 跨线程安全设置 PictureBox
+            if (webrtcPanel.InvokeRequired)
+            {
+                webrtcPanel.Invoke(new Action(() => webrtcPanel.Image?.Dispose()));
+                webrtcPanel.Invoke(new Action(() => webrtcPanel.Image = bmp));
+            }
+            else
+            {
+                webrtcPanel.Image?.Dispose();
+                webrtcPanel.Image = bmp;
+            }
+        }
+
         private LiveKitWebSocketIO WebSocketIO;
 
         private RTCPeerConnection subscriberPeerConnection;
@@ -140,7 +195,399 @@ namespace Client.Sdk.Dotnet.Example
         {
             throw new NotImplementedException();
         }
-
+        #region Join after
+        //        {
+        //	"room": {
+        //		"sid": "RM_N2Xcgnvs4kz9",
+        //		"name": "test_room",
+        //		"emptyTimeout": 300,
+        //		"creationTime": "1749735434",
+        //		"turnPassword": "YJLmOAHGHY89C8n3YnVkA3iaXlIehNsmCI3vnRi5kaH",
+        //		"enabledCodecs": [{
+        //			"mime": "audio/opus"
+        //		}, {
+        //			"mime": "audio/red"
+        //		}, {
+        //			"mime": "video/VP8"
+        //		}, {
+        //			"mime": "video/H264"
+        //		}, {
+        //			"mime": "video/VP9"
+        //		}, {
+        //			"mime": "video/AV1"
+        //		}, {
+        //			"mime": "video/rtx"
+        //		}],
+        //		"numParticipants": 2,
+        //		"numPublishers": 2,
+        //		"departureTimeout": 20,
+        //		"creationTimeMs": "1749735434617"
+        //	},
+        //	"participant": {
+        //		"sid": "PA_pqdAZ5A7PkLs",
+        //		"identity": "test_user1",
+        //		"joinedAt": "1749735527",
+        //		"name": "test_user1",
+        //		"permission": {
+        //			"canSubscribe": true,
+        //			"canPublish": true,
+        //			"canPublishData": true
+        //		},
+        //		"joinedAtMs": "1749735527143"
+        //	},
+        //	"otherParticipants": [{
+        //		"sid": "PA_d8Z3swcgQpcd",
+        //		"identity": "test_user3",
+        //		"state": "ACTIVE",
+        //		"tracks": [{
+        //			"sid": "TR_VSoERp55Wn4MMk",
+        //			"type": "VIDEO",
+        //			"name": "screenshare",
+        //			"width": 1920,
+        //			"height": 1080,
+        //			"simulcast": true,
+        //			"source": "SCREEN_SHARE",
+        //			"layers": [{
+        //				"width": 960,
+        //				"height": 540,
+        //				"bitrate": 150000,
+        //				"ssrc": 1047453374
+        //			}, {
+        //				"quality": "MEDIUM",
+        //				"width": 1920,
+        //				"height": 1080,
+        //				"bitrate": 3000000,
+        //				"ssrc": 1750359185
+        //			}],
+        //			"mimeType": "video/VP8",
+        //			"mid": "2",
+        //			"codecs": [{
+        //				"mimeType": "video/VP8",
+        //				"mid": "2",
+        //				"cid": "92F02745-89F4-4439-8737-0A227D93D668",
+        //				"layers": [{
+        //					"width": 960,
+        //					"height": 540,
+        //					"bitrate": 150000,
+        //					"ssrc": 1047453374
+        //				}, {
+        //					"quality": "MEDIUM",
+        //					"width": 1920,
+        //					"height": 1080,
+        //					"bitrate": 3000000,
+        //					"ssrc": 1750359185
+        //				}]
+        //			}],
+        //			"stream": "screen",
+        //			"version": {
+        //				"unixMicro": "1749735497814411"
+        //			}
+        //		}],
+        //		"joinedAt": "1749735434",
+        //		"name": "test_user3",
+        //		"version": 8,
+        //		"permission": {
+        //			"canSubscribe": true,
+        //			"canPublish": true,
+        //			"canPublishData": true
+        //		},
+        //		"isPublisher": true,
+        //		"joinedAtMs": "1749735434628"
+        //	}, {
+        //		"sid": "PA_r2bpQ8JJ9Ctj",
+        //		"identity": "bot_user",
+        //		"state": "ACTIVE",
+        //		"tracks": [{
+        //			"sid": "TR_VCUQhdDZspVoXB",
+        //			"type": "VIDEO",
+        //			"name": "demo",
+        //			"width": 1280,
+        //			"height": 720,
+        //			"simulcast": true,
+        //			"source": "CAMERA",
+        //			"layers": [{
+        //				"width": 320,
+        //				"height": 180,
+        //				"bitrate": 120000,
+        //				"ssrc": 3495242482
+        //			}, {
+        //				"quality": "MEDIUM",
+        //				"width": 640,
+        //				"height": 360,
+        //				"bitrate": 400000,
+        //				"ssrc": 2770722753
+        //			}, {
+        //				"quality": "HIGH",
+        //				"width": 1280,
+        //				"height": 720,
+        //				"bitrate": 1500000,
+        //				"ssrc": 1554602843
+        //			}],
+        //			"mimeType": "video/H264",
+        //			"mid": "1",
+        //			"codecs": [{
+        //				"mimeType": "video/H264",
+        //				"mid": "1",
+        //				"cid": "demo-video",
+        //				"layers": [{
+        //					"width": 320,
+        //					"height": 180,
+        //					"bitrate": 120000,
+        //					"ssrc": 3495242482
+        //				}, {
+        //					"quality": "MEDIUM",
+        //					"width": 640,
+        //					"height": 360,
+        //					"bitrate": 400000,
+        //					"ssrc": 2770722753
+        //				}, {
+        //					"quality": "HIGH",
+        //					"width": 1280,
+        //					"height": 720,
+        //					"bitrate": 1500000,
+        //					"ssrc": 1554602843
+        //				}]
+        //			}],
+        //			"stream": "camera",
+        //			"version": {
+        //				"unixMicro": "1749735451895869"
+        //			}
+        //		}],
+        //		"joinedAt": "1749735450",
+        //		"version": 6,
+        //		"permission": {
+        //			"canSubscribe": true,
+        //			"canPublish": true,
+        //			"canPublishData": true
+        //		},
+        //		"isPublisher": true,
+        //		"joinedAtMs": "1749735450658"
+        //	}],
+        //	"serverVersion": "1.9.0",
+        //	"iceServers": [{
+        //		"urls": ["stun:global.stun.twilio.com:3478", "stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]
+        //	}],
+        //	"subscriberPrimary": true,
+        //	"pingTimeout": 15,
+        //	"pingInterval": 5,
+        //	"serverInfo": {
+        //		"version": "1.9.0",
+        //		"protocol": 16,
+        //		"nodeId": "ND_kWn94PxEn6PD",
+        //		"agentProtocol": 1
+        //	},
+        //	"sifTrailer": "bndKc1BxQjNPazFRNXQ0N0l0N1N0VlV5WHpUMUFyaDJKTllXMkZsT1ByTA==",
+        //	"enabledPublishCodecs": [{
+        //		"mime": "video/VP8"
+        //	}, {
+        //		"mime": "video/H264"
+        //	}, {
+        //		"mime": "video/VP9"
+        //	}, {
+        //		"mime": "video/AV1"
+        //	}, {
+        //		"mime": "audio/opus"
+        //	}, {
+        //		"mime": "audio/red"
+        //	}],
+        //	"fastPublish": true
+        //}{
+        //	"room": {
+        //		"sid": "RM_N2Xcgnvs4kz9",
+        //		"name": "test_room",
+        //		"emptyTimeout": 300,
+        //		"creationTime": "1749735434",
+        //		"turnPassword": "YJLmOAHGHY89C8n3YnVkA3iaXlIehNsmCI3vnRi5kaH",
+        //		"enabledCodecs": [{
+        //			"mime": "audio/opus"
+        //		}, {
+        //			"mime": "audio/red"
+        //		}, {
+        //			"mime": "video/VP8"
+        //		}, {
+        //			"mime": "video/H264"
+        //		}, {
+        //			"mime": "video/VP9"
+        //		}, {
+        //			"mime": "video/AV1"
+        //		}, {
+        //			"mime": "video/rtx"
+        //		}],
+        //		"numParticipants": 2,
+        //		"numPublishers": 2,
+        //		"departureTimeout": 20,
+        //		"creationTimeMs": "1749735434617"
+        //	},
+        //	"participant": {
+        //		"sid": "PA_pqdAZ5A7PkLs",
+        //		"identity": "test_user1",
+        //		"joinedAt": "1749735527",
+        //		"name": "test_user1",
+        //		"permission": {
+        //			"canSubscribe": true,
+        //			"canPublish": true,
+        //			"canPublishData": true
+        //		},
+        //		"joinedAtMs": "1749735527143"
+        //	},
+        //	"otherParticipants": [{
+        //		"sid": "PA_d8Z3swcgQpcd",
+        //		"identity": "test_user3",
+        //		"state": "ACTIVE",
+        //		"tracks": [{
+        //			"sid": "TR_VSoERp55Wn4MMk",
+        //			"type": "VIDEO",
+        //			"name": "screenshare",
+        //			"width": 1920,
+        //			"height": 1080,
+        //			"simulcast": true,
+        //			"source": "SCREEN_SHARE",
+        //			"layers": [{
+        //				"width": 960,
+        //				"height": 540,
+        //				"bitrate": 150000,
+        //				"ssrc": 1047453374
+        //			}, {
+        //				"quality": "MEDIUM",
+        //				"width": 1920,
+        //				"height": 1080,
+        //				"bitrate": 3000000,
+        //				"ssrc": 1750359185
+        //			}],
+        //			"mimeType": "video/VP8",
+        //			"mid": "2",
+        //			"codecs": [{
+        //				"mimeType": "video/VP8",
+        //				"mid": "2",
+        //				"cid": "92F02745-89F4-4439-8737-0A227D93D668",
+        //				"layers": [{
+        //					"width": 960,
+        //					"height": 540,
+        //					"bitrate": 150000,
+        //					"ssrc": 1047453374
+        //				}, {
+        //					"quality": "MEDIUM",
+        //					"width": 1920,
+        //					"height": 1080,
+        //					"bitrate": 3000000,
+        //					"ssrc": 1750359185
+        //				}]
+        //			}],
+        //			"stream": "screen",
+        //			"version": {
+        //				"unixMicro": "1749735497814411"
+        //			}
+        //		}],
+        //		"joinedAt": "1749735434",
+        //		"name": "test_user3",
+        //		"version": 8,
+        //		"permission": {
+        //			"canSubscribe": true,
+        //			"canPublish": true,
+        //			"canPublishData": true
+        //		},
+        //		"isPublisher": true,
+        //		"joinedAtMs": "1749735434628"
+        //	}, {
+        //		"sid": "PA_r2bpQ8JJ9Ctj",
+        //		"identity": "bot_user",
+        //		"state": "ACTIVE",
+        //		"tracks": [{
+        //			"sid": "TR_VCUQhdDZspVoXB",
+        //			"type": "VIDEO",
+        //			"name": "demo",
+        //			"width": 1280,
+        //			"height": 720,
+        //			"simulcast": true,
+        //			"source": "CAMERA",
+        //			"layers": [{
+        //				"width": 320,
+        //				"height": 180,
+        //				"bitrate": 120000,
+        //				"ssrc": 3495242482
+        //			}, {
+        //				"quality": "MEDIUM",
+        //				"width": 640,
+        //				"height": 360,
+        //				"bitrate": 400000,
+        //				"ssrc": 2770722753
+        //			}, {
+        //				"quality": "HIGH",
+        //				"width": 1280,
+        //				"height": 720,
+        //				"bitrate": 1500000,
+        //				"ssrc": 1554602843
+        //			}],
+        //			"mimeType": "video/H264",
+        //			"mid": "1",
+        //			"codecs": [{
+        //				"mimeType": "video/H264",
+        //				"mid": "1",
+        //				"cid": "demo-video",
+        //				"layers": [{
+        //					"width": 320,
+        //					"height": 180,
+        //					"bitrate": 120000,
+        //					"ssrc": 3495242482
+        //				}, {
+        //					"quality": "MEDIUM",
+        //					"width": 640,
+        //					"height": 360,
+        //					"bitrate": 400000,
+        //					"ssrc": 2770722753
+        //				}, {
+        //					"quality": "HIGH",
+        //					"width": 1280,
+        //					"height": 720,
+        //					"bitrate": 1500000,
+        //					"ssrc": 1554602843
+        //				}]
+        //			}],
+        //			"stream": "camera",
+        //			"version": {
+        //				"unixMicro": "1749735451895869"
+        //			}
+        //		}],
+        //		"joinedAt": "1749735450",
+        //		"version": 6,
+        //		"permission": {
+        //			"canSubscribe": true,
+        //			"canPublish": true,
+        //			"canPublishData": true
+        //		},
+        //		"isPublisher": true,
+        //		"joinedAtMs": "1749735450658"
+        //	}],
+        //	"serverVersion": "1.9.0",
+        //	"iceServers": [{
+        //		"urls": ["stun:global.stun.twilio.com:3478", "stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]
+        //	}],
+        //	"subscriberPrimary": true,
+        //	"pingTimeout": 15,
+        //	"pingInterval": 5,
+        //	"serverInfo": {
+        //		"version": "1.9.0",
+        //		"protocol": 16,
+        //		"nodeId": "ND_kWn94PxEn6PD",
+        //		"agentProtocol": 1
+        //	},
+        //	"sifTrailer": "bndKc1BxQjNPazFRNXQ0N0l0N1N0VlV5WHpUMUFyaDJKTllXMkZsT1ByTA==",
+        //	"enabledPublishCodecs": [{
+        //		"mime": "video/VP8"
+        //	}, {
+        //		"mime": "video/H264"
+        //	}, {
+        //		"mime": "video/VP9"
+        //	}, {
+        //		"mime": "video/AV1"
+        //	}, {
+        //		"mime": "audio/opus"
+        //	}, {
+        //		"mime": "audio/red"
+        //	}],
+        //	"fastPublish": true
+        //}
+        #endregion
         private JoinResponse joinResponse;
 
         private void createPeerConnection()
@@ -170,13 +617,31 @@ namespace Client.Sdk.Dotnet.Example
             publisherPeerConnection = new RTCPeerConnection(configuration);
 
             var testPatternSource = new VideoTestPatternSource();
-            var videoEncoderEndPoint = new VideoEncoderEndPoint();
+            //var videoEncoderEndPoint = new VideoEncoderEndPoint();
+            var vp8VideoSink = new VideoEncoderEndPoint();
+            var vp8VideoSink2 = new VideoEncoderEndPoint();
+
             //var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(videoEncoderEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            publisherPeerConnection.addTrack(videoTrack);
-            //MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            //publisherPeerConnection.addTrack(audioTrack);
+
+            vp8VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+            {
+
+                unsafe
+                {
+                    fixed (byte* s = bmp)
+                    {
+                        var bmpImage = new Bitmap((int)width, (int)height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                        webrtcPanel.Image = bmpImage;
+                    }
+                }
+
+            };
+
+            MediaStreamTrack videoTrack = new MediaStreamTrack(vp8VideoSink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            subscriberPeerConnection.addTrack(videoTrack);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(vp8VideoSink2.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            publisherPeerConnection.addTrack(audioTrack);
 
 
 
@@ -239,6 +704,12 @@ namespace Client.Sdk.Dotnet.Example
                 }
             };
 
+
+
+
+            subscriberPeerConnection.OnVideoFrameReceived += vp8VideoSink.GotVideoFrame;
+
+
             publisherPeerConnection.onicecandidate += (candidate) =>
             {
                 Debug.WriteLine(publisherPeerConnection.signalingState);
@@ -281,6 +752,11 @@ namespace Client.Sdk.Dotnet.Example
                     // 连接关闭
                 }
             };
+        }
+
+        private void SubscriberPeerConnection_OnVideoFrameReceived(System.Net.IPEndPoint arg1, uint arg2, byte[] arg3, VideoFormat arg4)
+        {
+           
         }
 
         private async void onData(byte[] data)
@@ -423,7 +899,7 @@ namespace Client.Sdk.Dotnet.Example
                     break;
                 case SignalResponse.MessageOneofCase.Update:
                     // 处理房间更新的响应
-
+                    update(signalResponse.Update.Participants.ToList());
                     break;
                 case SignalResponse.MessageOneofCase.TrackUnpublished:
                     HandleTrackUnPublishedEvent(signalResponse.TrackUnpublished.TrackSid);
@@ -469,33 +945,126 @@ namespace Client.Sdk.Dotnet.Example
         private TimeSpan _pingInterval;
 
 
-        private void HandleTrackPublishedEvent(string cid, TrackInfo info) { }
+        private void HandleTrackPublishedEvent(string cid, TrackInfo info) 
+        {
+         Debug.WriteLine($"Track published with CID: {cid}, Track Info: {info.ToString()}");
+        }
 
-        private void HandleTrackUnPublishedEvent(string cid) { }
+        private void HandleTrackUnPublishedEvent(string cid) 
+        {
+            Debug.WriteLine($"Track unpublished with CID: {cid}.");
 
-        private void HandleTrackSubscribed(string trackSid) { }
+        }
 
-        private void HandleSpeakerChanged(List<SpeakerInfo> speakers) { }
+        private void HandleTrackSubscribed(string trackSid) 
+        {
+            Debug.WriteLine($"Track subscribed with SID: {trackSid}.");
+        }
 
-        private void roomUpdate(Room room) { }
+        private void HandleSpeakerChanged(List<SpeakerInfo> speakers)
+        {
+            //Debug.WriteLine($"Speakers changed: {speakers[0].ToString()}");
+            foreach (SpeakerInfo speaker in speakers)
+            {
+                Debug.WriteLine($"Speaker changed: {speaker.ToString()}");
+            }
+        }
 
-        private void connectionQuality(List<ConnectionQualityInfo> connectionQualities) { }
+        private void update(List<ParticipantInfo> participants)
+        {
+            foreach (ParticipantInfo participant in participants)
+            {
+                Debug.WriteLine($"Participant updated: {participant.ToString()}");
+            }
+        }
+
+        //        {
+        //	"sid": "RM_N2Xcgnvs4kz9",
+        //	"name": "test_room",
+        //	"emptyTimeout": 300,
+        //	"creationTime": "1749735434",
+        //	"turnPassword": "YJLmOAHGHY89C8n3YnVkA3iaXlIehNsmCI3vnRi5kaH",
+        //	"enabledCodecs": [{
+        //		"mime": "audio/opus"
+
+        //    }, {
+        //		"mime": "audio/red"
+        //	}, {
+        //    "mime": "video/VP8"
+
+        //    }, {
+        //    "mime": "video/H264"
+
+        //    }, {
+        //    "mime": "video/VP9"
+
+        //    }, {
+        //    "mime": "video/AV1"
+
+        //    }, {
+        //    "mime": "video/rtx"
+
+        //    }],
+        //	"numParticipants": 3,
+        //	"numPublishers": 2,
+        //	"departureTimeout": 20,
+        //	"creationTimeMs": "1749735434617"
+        //}
+        private void roomUpdate(Room room) 
+        {
+            Debug.WriteLine($"Room updated: {room.ToString()}");
+
+        }
+
+        private void connectionQuality(List<ConnectionQualityInfo> connectionQualities) 
+        {
+            foreach (var quality in connectionQualities)
+            {
+                Debug.WriteLine($"Connection quality for participant {quality.ParticipantSid}: {quality.Quality}");
+                //Connection quality for participant PA_d8Z3swcgQpcd: Excellent
+            }
+        }
 
         private void leave(LeaveRequest leave) { }
 
-        private void mute(string sid, bool mute) { }
+        private void mute(string sid, bool mute) 
+        {
+            Debug.WriteLine($"Track {sid} is now {(mute ? "muted" : "unmuted")}.");
 
-        private void streamStateUpdate(List<StreamStateInfo> streamStateInfos) { }
+        }
 
-        private void subscribedQualityUpdate(string sid, List<SubscribedQuality> subscribedQualities, List<SubscribedCodec> subscribedCodecs) { }
+        private void streamStateUpdate(List<StreamStateInfo> streamStateInfos) 
+        {
+            foreach (var streamState in streamStateInfos)
+            {
+                Debug.WriteLine($"Stream state updated for participant {streamState.ToString()}");
+                //Stream state updated for participant { "participantSid": "PA_d8Z3swcgQpcd", "trackSid": "TR_VSoERp55Wn4MMk" }
+                //VideoStream videoStream = subscriberPeerConnection.VideoStreamList.Where(v => v.RemoteTrack.SdpSsrc.Values.Any(s => s.Cname.Contains(streamState.ParticipantSid) && s.Cname.Contains(streamState.TrackSid))).FirstOrDefault();
+                //videoStream.OnVideoFrameReceivedByIndex += VideoStream_OnVideoFrameReceivedByIndex;
+            }
 
-        private void subscriptionPermissionUpdate(string participantSid, string trackSid, bool allowed) { }
+        }
+
+        private void subscribedQualityUpdate(string sid, List<SubscribedQuality> subscribedQualities, List<SubscribedCodec> subscribedCodecs) 
+        {
+            Debug.WriteLine($"Subscribed quality update for track {sid} with qualities: {string.Join(", ", subscribedQualities)} and codecs: {string.Join(", ", subscribedCodecs)}");
+
+        }
+
+        private void subscriptionPermissionUpdate(string participantSid, string trackSid, bool allowed) 
+        {
+            Debug.WriteLine($"Subscription permission for participant {participantSid} on track {trackSid} is now {(allowed ? "allowed" : "denied")}.");
+            //Subscription permission for participant PA_d8Z3swcgQpcd on track TR_VSoERp55Wn4MMk is now allowed.
+
+        }
         public class IceCandidate
         {
             public string candidate { get; set; }
             public string sdpMid { get; set; }
             public ushort sdpMLineIndex { get; set; }
         }
+
+
 
         /// <summary>
         /// 获取设备和操作系统信息
