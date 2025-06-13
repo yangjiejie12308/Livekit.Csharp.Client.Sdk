@@ -19,6 +19,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
+using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp;
 
 namespace Client.Sdk.Dotnet.Example
@@ -30,8 +31,9 @@ namespace Client.Sdk.Dotnet.Example
         public Form1()
         {
             InitializeComponent();
+            HardWare hardWare = new HardWare();
             connect();
-            //HardWare hardWare = new HardWare();
+
             //var list = hardWare.GetAllScreen();
             //var list2 = hardWare.GetAllCamera();
         }
@@ -663,21 +665,20 @@ namespace Client.Sdk.Dotnet.Example
 
             subscriberPeerConnection = new RTCPeerConnection(configuration);
 
-
-            //testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
-            //videoEncoderEndPoint.OnVideoSourceEncodedSample += subscriberPeerConnection.SendVideo;
-            //audioSource.OnAudioSourceEncodedSample += subscriberPeerConnection.SendAudio;
-
-            //subscriberPeerConnection.OnVideoFormatsNegotiated += (formats) => videoEncoderEndPoint.SetVideoSourceFormat(formats.First());
-            //subscriberPeerConnection.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
-
             // 创建发布者和订阅者的 PeerConnection
             publisherPeerConnection = new RTCPeerConnection(configuration);
 
-            var vp8VideoSink2 = new VideoEncoderEndPoint();
+            var testPatternSource = new FFmpegFileSource(@"E:\TDG\sipsorcery\examples\WebRTCExamples\WebRTCDaemon\media\max_intro.mp4", true, new AudioEncoder());
+            testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(vp8VideoSink2.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            publisherPeerConnection.addTrack(audioTrack);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            MediaStreamTrack audoTrack = new MediaStreamTrack(testPatternSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            publisherPeerConnection.addTrack(videoTrack);
+            publisherPeerConnection.addTrack(audoTrack);
+            testPatternSource.OnVideoSourceEncodedSample += publisherPeerConnection.SendVideo;
+            testPatternSource.OnAudioSourceEncodedSample += publisherPeerConnection.SendAudio;
+            publisherPeerConnection.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
+            publisherPeerConnection.OnAudioFormatsNegotiated += (formats) => testPatternSource.SetAudioSourceFormat(formats.First());
 
 
             subscriberPeerConnection.onicecandidate += async (candidate) =>
@@ -707,15 +708,17 @@ namespace Client.Sdk.Dotnet.Example
                 {
                     SignalRequest signalRequest = new SignalRequest();
                     AddTrackRequest addTrackRequest = new AddTrackRequest();
-                    addTrackRequest.Name = "默认音频轨道名字";
+                    addTrackRequest.Cid = videoTrack.SdpSsrc.Values.FirstOrDefault()?.ToString() ?? "default-video-cid";
+                    addTrackRequest.Name = "microphone";
                     addTrackRequest.Type = TrackType.Video;
                     addTrackRequest.Source = TrackSource.Camera;
-                    addTrackRequest.Sid = joinResponse.Participant.Sid;
-                    addTrackRequest.Stream = "";
+                    addTrackRequest.DisableRed = false;
+                    addTrackRequest.Stream = "screenshare_video";
                     addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
                     signalRequest.AddTrack = addTrackRequest;
                     WebSocketIO.Send(signalRequest.ToByteArray());
                     var result2 = publisherPeerConnection.createOffer(null);
+                    await publisherPeerConnection.setLocalDescription(result2);
                     SignalRequest signalRequest3 = new SignalRequest();
                     signalRequest3.Offer = new SessionDescription
                     {
@@ -723,7 +726,6 @@ namespace Client.Sdk.Dotnet.Example
                         Type = "offer"
                     };
                     WebSocketIO.Send(signalRequest3.ToByteArray());
-                    await publisherPeerConnection.setLocalDescription(result2);
                     publisherPeerConnection.restartIce();
                     Debug.WriteLine($"subscriberPeerConnection: connected");
                 }
@@ -762,13 +764,13 @@ namespace Client.Sdk.Dotnet.Example
 
                 WebSocketIO.Send(signalRequest.ToByteArray());
             };
-            publisherPeerConnection.oniceconnectionstatechange += (state) =>
+            publisherPeerConnection.oniceconnectionstatechange += async (state) =>
             {
                 if (state == RTCIceConnectionState.connected)
                 {
                     // 连接成功
                     Debug.WriteLine($"publisherPeerConnection: connected");
-
+                    await testPatternSource.StartVideo();
                 }
                 else if (state == RTCIceConnectionState.failed)
                 {
