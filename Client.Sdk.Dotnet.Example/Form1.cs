@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Net;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -29,60 +30,118 @@ namespace Client.Sdk.Dotnet.Example
         public Form1()
         {
             InitializeComponent();
-            this.webrtcPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.webrtcPanel_Paint);
             connect();
             //HardWare hardWare = new HardWare();
             //var list = hardWare.GetAllScreen();
             //var list2 = hardWare.GetAllCamera();
         }
 
-        private void webrtcPanel_Paint(object? sender, PaintEventArgs e)
+
+        private readonly Dictionary<string, PictureBox> _videoBoxes = new();
+
+        private void AddOrUpdateVideoBox(string key)
         {
-            lock (_bitmapLock)
+            if (!_videoBoxes.ContainsKey(key))
             {
-                if (_webrtcBitmap != null)
+                var pb = new PictureBox
                 {
-                    // 保持比例居中绘制
-                    var destRect = GetFitRect(_webrtcBitmap.Width, _webrtcBitmap.Height, webrtcPanel.Width, webrtcPanel.Height);
-                    e.Graphics.DrawImage(_webrtcBitmap, destRect);
+                    Width = 320,
+                    Height = 180,
+                    SizeMode = PictureBoxSizeMode.Zoom,
+                    BorderStyle = BorderStyle.FixedSingle,
+                    Name = key
+                };
+                // 这里假设你有一个 panelVideoContainer 用于承载所有 PictureBox
+                if (panelVideoContainer.InvokeRequired)
+                {
+                    panelVideoContainer.Invoke(new Action(() =>
+                    {
+                        panelVideoContainer.Controls.Add(pb);
+                        _videoBoxes[key] = pb;
+                    }));
+                }
+                else
+                {
+                    panelVideoContainer.Controls.Add(pb);
+                    _videoBoxes[key] = pb;
                 }
             }
         }
 
-        // 计算等比缩放后的目标矩形
-        private Rectangle GetFitRect(int srcW, int srcH, int destW, int destH)
+        private void RenderFrameToBox(string key, Bitmap bmp)
         {
-            float ratio = Math.Min((float)destW / srcW, (float)destH / srcH);
-            int w = (int)(srcW * ratio);
-            int h = (int)(srcH * ratio);
-            int x = (destW - w) / 2;
-            int y = (destH - h) / 2;
-            return new Rectangle(x, y, w, h);
-        }
 
-        public void RenderWebRTCFrame(byte[] frameData, int width, int height)
-        {
-            var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            var bmpData = bmp.LockBits(
-                new Rectangle(0, 0, width, height),
-                System.Drawing.Imaging.ImageLockMode.WriteOnly,
-                bmp.PixelFormat);
-
-            System.Runtime.InteropServices.Marshal.Copy(frameData, 0, bmpData.Scan0, frameData.Length);
-            bmp.UnlockBits(bmpData);
-
-            // 跨线程安全设置 PictureBox
-            if (webrtcPanel.InvokeRequired)
+            if (!_videoBoxes.ContainsKey(key))
             {
-                webrtcPanel.Invoke(new Action(() => webrtcPanel.Image?.Dispose()));
-                webrtcPanel.Invoke(new Action(() => webrtcPanel.Image = bmp));
+                AddOrUpdateVideoBox(key);
             }
-            else
+
+            if (_videoBoxes.TryGetValue(key, out var pb))
             {
-                webrtcPanel.Image?.Dispose();
-                webrtcPanel.Image = bmp;
+                if (pb.InvokeRequired)
+                {
+                    pb.Invoke(new Action(() =>
+                    {
+                        pb.Image?.Dispose();
+                        pb.Image = bmp;
+                    }));
+                }
+                else
+                {
+                    pb.Image?.Dispose();
+                    pb.Image = bmp;
+                }
             }
         }
+
+
+        //private void webrtcPanel_Paint(object? sender, PaintEventArgs e)
+        //{
+        //    lock (_bitmapLock)
+        //    {
+        //        if (_webrtcBitmap != null)
+        //        {
+        //            // 保持比例居中绘制
+        //            var destRect = GetFitRect(_webrtcBitmap.Width, _webrtcBitmap.Height, webrtcPanel.Width, webrtcPanel.Height);
+        //            e.Graphics.DrawImage(_webrtcBitmap, destRect);
+        //        }
+        //    }
+        //}
+
+        //// 计算等比缩放后的目标矩形
+        //private Rectangle GetFitRect(int srcW, int srcH, int destW, int destH)
+        //{
+        //    float ratio = Math.Min((float)destW / srcW, (float)destH / srcH);
+        //    int w = (int)(srcW * ratio);
+        //    int h = (int)(srcH * ratio);
+        //    int x = (destW - w) / 2;
+        //    int y = (destH - h) / 2;
+        //    return new Rectangle(x, y, w, h);
+        //}
+
+        //public void RenderWebRTCFrame(byte[] frameData, int width, int height)
+        //{
+        //    var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        //    var bmpData = bmp.LockBits(
+        //        new Rectangle(0, 0, width, height),
+        //        System.Drawing.Imaging.ImageLockMode.WriteOnly,
+        //        bmp.PixelFormat);
+
+        //    System.Runtime.InteropServices.Marshal.Copy(frameData, 0, bmpData.Scan0, frameData.Length);
+        //    bmp.UnlockBits(bmpData);
+
+        //    // 跨线程安全设置 PictureBox
+        //    if (webrtcPanel.InvokeRequired)
+        //    {
+        //        webrtcPanel.Invoke(new Action(() => webrtcPanel.Image?.Dispose()));
+        //        webrtcPanel.Invoke(new Action(() => webrtcPanel.Image = bmp));
+        //    }
+        //    else
+        //    {
+        //        webrtcPanel.Image?.Dispose();
+        //        webrtcPanel.Image = bmp;
+        //    }
+        //}
 
         private LiveKitWebSocketIO WebSocketIO;
 
@@ -90,7 +149,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private RTCPeerConnection publisherPeerConnection;
 
-        private string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk4MDIwNjAsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXIxIiwibmJmIjoxNzQ5NzE1NjYwLCJzdWIiOiJ0ZXN0X3VzZXIxIiwidmlkZW8iOnsicm9vbSI6InRlc3Rfcm9vbSIsInJvb21Kb2luIjp0cnVlfX0.QLCcOqxLVDvkhFv2Cs87_bundrojWeG6D5EBv3niI9w";
+        private string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTAxMjcwMDQsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXI3NyIsIm5iZiI6MTc0OTc4MTQwNCwic3ViIjoidGVzdF91c2VyNzciLCJ2aWRlbyI6eyJyb29tIjoidGVzdF9yb29tIiwicm9vbUpvaW4iOnRydWV9fQ.-JQnEioq00oyBZ47ITZrjc044lNpycDURoP94hmeRtg";
         private async Task connect()
         {
             Uri uri = await buildUri("ws://127.0.0.1:7880", token);
@@ -605,7 +664,6 @@ namespace Client.Sdk.Dotnet.Example
             subscriberPeerConnection = new RTCPeerConnection(configuration);
 
 
-
             //testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
             //videoEncoderEndPoint.OnVideoSourceEncodedSample += subscriberPeerConnection.SendVideo;
             //audioSource.OnAudioSourceEncodedSample += subscriberPeerConnection.SendAudio;
@@ -616,34 +674,10 @@ namespace Client.Sdk.Dotnet.Example
             // 创建发布者和订阅者的 PeerConnection
             publisherPeerConnection = new RTCPeerConnection(configuration);
 
-            var testPatternSource = new VideoTestPatternSource();
-            //var videoEncoderEndPoint = new VideoEncoderEndPoint();
-            var vp8VideoSink = new VideoEncoderEndPoint();
             var vp8VideoSink2 = new VideoEncoderEndPoint();
 
-            //var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
-
-
-            vp8VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
-            {
-
-                unsafe
-                {
-                    fixed (byte* s = bmp)
-                    {
-                        var bmpImage = new Bitmap((int)width, (int)height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
-                        webrtcPanel.Image = bmpImage;
-                    }
-                }
-
-            };
-
-            MediaStreamTrack videoTrack = new MediaStreamTrack(vp8VideoSink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            subscriberPeerConnection.addTrack(videoTrack);
             MediaStreamTrack audioTrack = new MediaStreamTrack(vp8VideoSink2.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             publisherPeerConnection.addTrack(audioTrack);
-
-
 
 
             subscriberPeerConnection.onicecandidate += async (candidate) =>
@@ -681,7 +715,6 @@ namespace Client.Sdk.Dotnet.Example
                     addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
                     signalRequest.AddTrack = addTrackRequest;
                     WebSocketIO.Send(signalRequest.ToByteArray());
-                    Debug.WriteLine($"SubPeer Send AddTrackRequest: {addTrackRequest.ToString()}");
                     var result2 = publisherPeerConnection.createOffer(null);
                     SignalRequest signalRequest3 = new SignalRequest();
                     signalRequest3.Offer = new SessionDescription
@@ -689,10 +722,10 @@ namespace Client.Sdk.Dotnet.Example
                         Sdp = result2.sdp,
                         Type = "offer"
                     };
-                    Debug.WriteLine($"PublishPeer Send Offer SDP: {signalRequest3.Offer.Sdp}");
                     WebSocketIO.Send(signalRequest3.ToByteArray());
                     await publisherPeerConnection.setLocalDescription(result2);
                     publisherPeerConnection.restartIce();
+                    Debug.WriteLine($"subscriberPeerConnection: connected");
                 }
                 else if (state == RTCIceConnectionState.failed)
                 {
@@ -703,12 +736,6 @@ namespace Client.Sdk.Dotnet.Example
                     // 连接关闭
                 }
             };
-
-
-
-
-            subscriberPeerConnection.OnVideoFrameReceived += vp8VideoSink.GotVideoFrame;
-
 
             publisherPeerConnection.onicecandidate += (candidate) =>
             {
@@ -737,10 +764,10 @@ namespace Client.Sdk.Dotnet.Example
             };
             publisherPeerConnection.oniceconnectionstatechange += (state) =>
             {
-                Debug.WriteLine($"PublishPeer ICE connection state change to {state}.");
                 if (state == RTCIceConnectionState.connected)
                 {
                     // 连接成功
+                    Debug.WriteLine($"publisherPeerConnection: connected");
 
                 }
                 else if (state == RTCIceConnectionState.failed)
@@ -754,15 +781,11 @@ namespace Client.Sdk.Dotnet.Example
             };
         }
 
-        private void SubscriberPeerConnection_OnVideoFrameReceived(System.Net.IPEndPoint arg1, uint arg2, byte[] arg3, VideoFormat arg4)
-        {
-           
-        }
 
         private async void onData(byte[] data)
         {
             SignalResponse? signalResponse = SignalResponse.Parser.ParseFrom(data);
-            Debug.WriteLine($"Received signal : {signalResponse?.MessageCase}");
+            //Debug.WriteLine($"Received signal : {signalResponse?.MessageCase}");
             switch (signalResponse.MessageCase)
             {
                 case SignalResponse.MessageOneofCase.Offer:
@@ -770,6 +793,17 @@ namespace Client.Sdk.Dotnet.Example
                     {
                         createPeerConnection();
                     }
+
+                    if (subscriberPeerConnection.VideoRemoteTrack != null)
+                    {
+                        subscriberPeerConnection.removeTrack(subscriberPeerConnection.VideoRemoteTrack);
+                    }
+
+                    VideoEncoderEndPoint vp8videosink = new VideoEncoderEndPoint();
+                    MediaStreamTrack videotrack = new MediaStreamTrack(vp8videosink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+                    subscriberPeerConnection!.addTrack(videotrack);
+
+
                     RTCSessionDescriptionInit rTCSessionDescriptionInit = new RTCSessionDescriptionInit();
                     rTCSessionDescriptionInit.sdp = signalResponse.Offer.Sdp;
                     rTCSessionDescriptionInit.type = RTCSdpType.offer;
@@ -778,6 +812,7 @@ namespace Client.Sdk.Dotnet.Example
                     if (result == SetDescriptionResultEnum.OK)
                     {
                         var answer = subscriberPeerConnection.createAnswer();
+                        await subscriberPeerConnection.setLocalDescription(answer);
                         SignalRequest signalRequest = new SignalRequest();
                         signalRequest.Answer = new SessionDescription
                         {
@@ -785,12 +820,13 @@ namespace Client.Sdk.Dotnet.Example
                             Type = "answer",
                         };
                         WebSocketIO.Send(signalRequest.ToByteArray());
-                        await subscriberPeerConnection.setLocalDescription(answer);
+                        subscriberPeerConnection.restartIce();
                     }
                     else
                     {
                         Debug.WriteLine("Failed to set remote description for subscriber.");
                     }
+                    Debug.WriteLine($"Received signal : {signalResponse?.MessageCase}");
                     break;
                 case SignalResponse.MessageOneofCase.Answer:
                     RTCSessionDescriptionInit rTCSessionDescriptionInit2 = new RTCSessionDescriptionInit();
@@ -875,7 +911,6 @@ namespace Client.Sdk.Dotnet.Example
                         }
                         else
                         {
-                            Debug.WriteLine($"{signalResponse.ToString()}");
                             var jsObj = JsonSerializer.Deserialize<IceCandidate>(signalResponse.Trickle.CandidateInit);
                             var trickleCandidate = new RTCIceCandidateInit
                             {
@@ -945,18 +980,18 @@ namespace Client.Sdk.Dotnet.Example
         private TimeSpan _pingInterval;
 
 
-        private void HandleTrackPublishedEvent(string cid, TrackInfo info) 
+        private void HandleTrackPublishedEvent(string cid, TrackInfo info)
         {
-         Debug.WriteLine($"Track published with CID: {cid}, Track Info: {info.ToString()}");
+            Debug.WriteLine($"Track published with CID: {cid}, Track Info: {info.ToString()}");
         }
 
-        private void HandleTrackUnPublishedEvent(string cid) 
+        private void HandleTrackUnPublishedEvent(string cid)
         {
             Debug.WriteLine($"Track unpublished with CID: {cid}.");
 
         }
 
-        private void HandleTrackSubscribed(string trackSid) 
+        private void HandleTrackSubscribed(string trackSid)
         {
             Debug.WriteLine($"Track subscribed with SID: {trackSid}.");
         }
@@ -1010,13 +1045,13 @@ namespace Client.Sdk.Dotnet.Example
         //	"departureTimeout": 20,
         //	"creationTimeMs": "1749735434617"
         //}
-        private void roomUpdate(Room room) 
+        private void roomUpdate(Room room)
         {
             Debug.WriteLine($"Room updated: {room.ToString()}");
 
         }
 
-        private void connectionQuality(List<ConnectionQualityInfo> connectionQualities) 
+        private void connectionQuality(List<ConnectionQualityInfo> connectionQualities)
         {
             foreach (var quality in connectionQualities)
             {
@@ -1027,31 +1062,72 @@ namespace Client.Sdk.Dotnet.Example
 
         private void leave(LeaveRequest leave) { }
 
-        private void mute(string sid, bool mute) 
+        private void mute(string sid, bool mute)
         {
             Debug.WriteLine($"Track {sid} is now {(mute ? "muted" : "unmuted")}.");
-
         }
 
-        private void streamStateUpdate(List<StreamStateInfo> streamStateInfos) 
+        private void streamStateUpdate(List<StreamStateInfo> streamStateInfos)
         {
             foreach (var streamState in streamStateInfos)
             {
                 Debug.WriteLine($"Stream state updated for participant {streamState.ToString()}");
-                //Stream state updated for participant { "participantSid": "PA_d8Z3swcgQpcd", "trackSid": "TR_VSoERp55Wn4MMk" }
-                //VideoStream videoStream = subscriberPeerConnection.VideoStreamList.Where(v => v.RemoteTrack.SdpSsrc.Values.Any(s => s.Cname.Contains(streamState.ParticipantSid) && s.Cname.Contains(streamState.TrackSid))).FirstOrDefault();
-                //videoStream.OnVideoFrameReceivedByIndex += VideoStream_OnVideoFrameReceivedByIndex;
-            }
 
+                //Stream state updated for participant { "participantSid": "PA_d8Z3swcgQpcd", "trackSid": "TR_VSoERp55Wn4MMk" }
+
+                VideoEncoderEndPoint vp8VideoSink = new VideoEncoderEndPoint();
+
+                vp8VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+                {
+                    //Debug.WriteLine($"Received video frame: {width}x{height}, stride: {stride}, pixelFormat: {pixelFormat}");
+                    //unsafe
+                    //{
+                    //    fixed (byte* s = bmp)
+                    //    {
+                    //        var bmpImage = new Bitmap((int)width, (int)height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                    //        webrtcPanel.Image = bmpImage;
+                    //    }
+                    //}
+                    //RenderWebRTCFrame(bmp, (int)width, (int)height);
+
+                    // 假设 bmp 是 byte[]，你需要转 Bitmap
+                    using var bitmap = new Bitmap((int)width, (int)height, PixelFormat.Format24bppRgb);
+
+
+                    var bmpData = bitmap.LockBits(
+                        new Rectangle(0, 0, (int)width, (int)height),
+                        System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                        bitmap.PixelFormat);
+
+                    System.Runtime.InteropServices.Marshal.Copy(bmp, 0, bmpData.Scan0, bmp.Length);
+                    bitmap.UnlockBits(bmpData);
+
+                    RenderFrameToBox(streamState.TrackSid, (Bitmap)bitmap.Clone());
+                };
+
+                VideoStream videoStream = subscriberPeerConnection.VideoStreamList.Where(v => v.RemoteTrack.SdpSsrc.Values.Any(s => s.Cname.Contains(streamState.ParticipantSid) && s.Cname.Contains(streamState.TrackSid))).FirstOrDefault();
+
+                if (videoStream == null)
+                {
+                    Debug.WriteLine("未找到对应的 VideoStream，可能 SDP 协商后 track/ssrc 变了。");
+                    continue;
+                }
+
+                videoStream.OnVideoFrameReceivedByIndex += (q, e, c, bmp, f) =>
+                {
+                    vp8VideoSink.GotVideoFrame(e, c, bmp, f);
+                };
+            }
         }
 
-        private void subscribedQualityUpdate(string sid, List<SubscribedQuality> subscribedQualities, List<SubscribedCodec> subscribedCodecs) 
+
+        private void subscribedQualityUpdate(string sid, List<SubscribedQuality> subscribedQualities, List<SubscribedCodec> subscribedCodecs)
         {
             Debug.WriteLine($"Subscribed quality update for track {sid} with qualities: {string.Join(", ", subscribedQualities)} and codecs: {string.Join(", ", subscribedCodecs)}");
 
         }
 
-        private void subscriptionPermissionUpdate(string participantSid, string trackSid, bool allowed) 
+        private void subscriptionPermissionUpdate(string participantSid, string trackSid, bool allowed)
         {
             Debug.WriteLine($"Subscription permission for participant {participantSid} on track {trackSid} is now {(allowed ? "allowed" : "denied")}.");
             //Subscription permission for participant PA_d8Z3swcgQpcd on track TR_VSoERp55Wn4MMk is now allowed.

@@ -28,34 +28,38 @@
         /// </summary>
         private void InitializeComponent()
         {
-            webrtcPanel = new PictureBox();
-            ((System.ComponentModel.ISupportInitialize)webrtcPanel).BeginInit();
+            panelVideoContainer = new TableLayoutPanel();
             SuspendLayout();
             // 
-            // webrtcPanel
+            // panelVideoContainer
             // 
-            webrtcPanel.BackColor = Color.Black;
-            webrtcPanel.Dock = DockStyle.Fill;
-            webrtcPanel.Location = new Point(0, 0);
-            webrtcPanel.Name = "webrtcPanel";
-            webrtcPanel.Size = new Size(800, 450);
-            webrtcPanel.TabIndex = 0;
-            webrtcPanel.TabStop = false;
+            panelVideoContainer.ColumnCount = 3;
+            panelVideoContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
+            panelVideoContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
+            panelVideoContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
+            panelVideoContainer.Dock = DockStyle.Fill;
+            panelVideoContainer.Location = new Point(0, 0);
+            panelVideoContainer.Name = "panelVideoContainer";
+            panelVideoContainer.RowCount = 3;
+            panelVideoContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
+            panelVideoContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
+            panelVideoContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
+            panelVideoContainer.Size = new Size(935, 502);
+            panelVideoContainer.TabIndex = 0;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
-            Controls.Add(webrtcPanel);
+            ClientSize = new Size(935, 502);
+            Controls.Add(panelVideoContainer);
             Name = "Form1";
             Text = "Form1";
-            ((System.ComponentModel.ISupportInitialize)webrtcPanel).EndInit();
             ResumeLayout(false);
         }
 
         #endregion
 
-        private PictureBox webrtcPanel;
+        private TableLayoutPanel panelVideoContainer;
     }
 }
