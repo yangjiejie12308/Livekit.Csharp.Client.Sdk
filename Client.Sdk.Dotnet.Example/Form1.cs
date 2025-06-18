@@ -151,7 +151,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private RTCPeerConnection publisherPeerConnection;
 
-        private string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTAxMjcwMDQsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXI3NyIsIm5iZiI6MTc0OTc4MTQwNCwic3ViIjoidGVzdF91c2VyNzciLCJ2aWRlbyI6eyJyb29tIjoidGVzdF9yb29tIiwicm9vbUpvaW4iOnRydWV9fQ.-JQnEioq00oyBZ47ITZrjc044lNpycDURoP94hmeRtg";
+        private string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTA1NzI1NzQsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXI3NyIsIm5iZiI6MTc1MDIyNjk3NCwic3ViIjoidGVzdF91c2VyNzciLCJ2aWRlbyI6eyJyb29tIjoidGVzdF9yb29tIiwicm9vbUpvaW4iOnRydWV9fQ._SAWlf2y7vOKiUZH9aA-8goG3Ij6PS33RPCZKJ_1teU";
         private async Task connect()
         {
             Uri uri = await buildUri("ws://127.0.0.1:7880", token);
@@ -771,6 +771,7 @@ namespace Client.Sdk.Dotnet.Example
                     // 连接成功
                     Debug.WriteLine($"publisherPeerConnection: connected");
                     await testPatternSource.StartVideo();
+                    await testPatternSource.StartAudio();
                 }
                 else if (state == RTCIceConnectionState.failed)
                 {

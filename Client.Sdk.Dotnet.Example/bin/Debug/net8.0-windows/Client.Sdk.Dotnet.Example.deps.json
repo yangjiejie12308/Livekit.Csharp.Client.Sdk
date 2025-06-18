@@ -874,13 +874,14 @@
           "Grpc.Core": "2.46.6",
           "Grpc.Net.Client": "2.71.0",
           "SIPSorcery": "8.0.14",
+          "SIPSorceryMedia.Encoders": "8.0.7",
           "SIPSorceryMedia.FFmpeg": "8.0.10",
           "Serilog.Extensions.Logging": "3.0.1",
           "Serilog.Sinks.Console": "3.1.1"
         },
         "runtime": {
           "Client.Sdk.Dotnet.dll": {
-            "assemblyVersion": "1.0.0",
+            "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
