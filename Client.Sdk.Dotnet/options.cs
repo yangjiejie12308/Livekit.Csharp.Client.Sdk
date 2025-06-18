@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Client.Sdk.Dotnet.e2ee;
-using Client.Sdk.Dotnet.track;
 using Client.Sdk.Dotnet.types;
 
 namespace Client.Sdk.Dotnet
@@ -131,20 +130,6 @@ namespace Client.Sdk.Dotnet
     /// </summary>
     public class RoomOptions
     {
-        /// <summary>
-        /// Default options used for LocalVideoTrack.CreateCameraTrack.
-        /// </summary>
-        public CameraCaptureOptions DefaultCameraCaptureOptions { get; }
-
-        /// <summary>
-        /// Default options used for LocalVideoTrack.CreateScreenShareTrack.
-        /// </summary>
-        public ScreenShareCaptureOptions DefaultScreenShareCaptureOptions { get; }
-
-        /// <summary>
-        /// Default options used when capturing video for a LocalAudioTrack.
-        /// </summary>
-        public AudioCaptureOptions DefaultAudioCaptureOptions { get; }
 
         /// <summary>
         /// Default options used when publishing a LocalVideoTrack.
@@ -156,10 +141,6 @@ namespace Client.Sdk.Dotnet
         /// </summary>
         public AudioPublishOptions DefaultAudioPublishOptions { get; }
 
-        /// <summary>
-        /// Default audio output options.
-        /// </summary>
-        public AudioOutputOptions DefaultAudioOutputOptions { get; }
 
         /// <summary>
         /// AdaptiveStream lets LiveKit automatically manage quality of subscribed
@@ -207,64 +188,7 @@ namespace Client.Sdk.Dotnet
         /// <summary>
         /// Creates a new instance of RoomOptions with default values.
         /// </summary>
-        public RoomOptions(
-            CameraCaptureOptions? defaultCameraCaptureOptions = null,
-            ScreenShareCaptureOptions? defaultScreenShareCaptureOptions = null,
-            AudioCaptureOptions? defaultAudioCaptureOptions = null,
-            VideoPublishOptions? defaultVideoPublishOptions = null,
-            AudioPublishOptions? defaultAudioPublishOptions = null,
-            AudioOutputOptions? defaultAudioOutputOptions = null,
-            bool adaptiveStream = false,
-            bool dynacast = false,
-            bool stopLocalTrackOnUnpublish = true,
-            E2EEOptions? e2eeOptions = null,
-            bool? enableVisualizer = false,
-            bool fastPublish = true)
-        {
-            DefaultCameraCaptureOptions = defaultCameraCaptureOptions ?? new CameraCaptureOptions();
-            DefaultScreenShareCaptureOptions = defaultScreenShareCaptureOptions ?? new ScreenShareCaptureOptions();
-            DefaultAudioCaptureOptions = defaultAudioCaptureOptions ?? new AudioCaptureOptions();
-            DefaultVideoPublishOptions = defaultVideoPublishOptions ?? new VideoPublishOptions();
-            DefaultAudioPublishOptions = defaultAudioPublishOptions ?? new AudioPublishOptions();
-            DefaultAudioOutputOptions = defaultAudioOutputOptions ?? new AudioOutputOptions();
-            AdaptiveStream = adaptiveStream;
-            Dynacast = dynacast;
-            StopLocalTrackOnUnpublish = stopLocalTrackOnUnpublish;
-            E2EEOptions = e2eeOptions;
-            EnableVisualizer = enableVisualizer;
-            FastPublish = fastPublish;
-        }
-
-        /// <summary>
-        /// Creates a new RoomOptions instance with the specified changes.
-        /// </summary>
-        public RoomOptions CopyWith(
-            CameraCaptureOptions? defaultCameraCaptureOptions = null,
-            ScreenShareCaptureOptions? defaultScreenShareCaptureOptions = null,
-            AudioCaptureOptions? defaultAudioCaptureOptions = null,
-            VideoPublishOptions? defaultVideoPublishOptions = null,
-            AudioPublishOptions? defaultAudioPublishOptions = null,
-            AudioOutputOptions? defaultAudioOutputOptions = null,
-            bool? adaptiveStream = null,
-            bool? dynacast = null,
-            bool? stopLocalTrackOnUnpublish = null,
-            E2EEOptions? e2eeOptions = null,
-            bool? fastPublish = null)
-        {
-            return new RoomOptions(
-                defaultCameraCaptureOptions ?? DefaultCameraCaptureOptions,
-                defaultScreenShareCaptureOptions ?? DefaultScreenShareCaptureOptions,
-                defaultAudioCaptureOptions ?? DefaultAudioCaptureOptions,
-                defaultVideoPublishOptions ?? DefaultVideoPublishOptions,
-                defaultAudioPublishOptions ?? DefaultAudioPublishOptions,
-                defaultAudioOutputOptions ?? DefaultAudioOutputOptions,
-                adaptiveStream ?? AdaptiveStream,
-                dynacast ?? Dynacast,
-                stopLocalTrackOnUnpublish ?? StopLocalTrackOnUnpublish,
-                e2eeOptions ?? E2EEOptions,
-                EnableVisualizer,
-                fastPublish ?? FastPublish);
-        }
+       
     }
 
     /// <summary>

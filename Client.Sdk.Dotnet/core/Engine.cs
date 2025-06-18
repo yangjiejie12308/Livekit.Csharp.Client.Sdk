@@ -118,7 +118,7 @@ namespace Client.Sdk.Dotnet.core
 
         }
 
-        public required LiveKit.Proto.Room room { get; set; }
+        public  LiveKit.Proto.Room room { get; set; }
         public event EventHandler<LiveKit.Proto.Room> LiveKitConnectionQualityUpdated;
         private void UpdateRoom(LiveKit.Proto.Room room)
         {
@@ -198,7 +198,7 @@ namespace Client.Sdk.Dotnet.core
         {
         }
 
-        public async Task Connect()
+        public async Task ConnectAsync()
         {
             Uri uri = await GetBuildUri(url, token);
             WebSocketIO = await LiveKitWebSocketIO.Connect(uri, new WebSocketEventHandlers(
@@ -453,7 +453,7 @@ namespace Client.Sdk.Dotnet.core
         private async void onData(byte[] data)
         {
             SignalResponse? signalResponse = SignalResponse.Parser.ParseFrom(data);
-            //Debug.WriteLine($"Received signal : {signalResponse?.MessageCase}");
+            Debug.WriteLine($"Received signal : {signalResponse?.MessageCase}");
             switch (signalResponse.MessageCase)
             {
                 case SignalResponse.MessageOneofCase.Join:
@@ -550,31 +550,41 @@ namespace Client.Sdk.Dotnet.core
             UpdateTrackSubscribedCodecs(trackSid, subscribedCodecs);
         }
 
-        public Dictionary<string, List<VideoEncoderEndPoint>> ParticipantStream = new Dictionary<string, List<VideoEncoderEndPoint>>();
+        public Dictionary<string, VideoEncoderEndPoint> TrackStreams = new Dictionary<string, VideoEncoderEndPoint>();
 
-        public event EventHandler<string> onStreamUpdated;
-        private void UpdateParticipantStream(string participantInfo, VideoEncoderEndPoint videoEncoderEndPoint)
+        public event EventHandler<StreamStateInfo> onStreamUpdated;
+        private void UpdateParticipantStream(string trackId, VideoEncoderEndPoint videoEncoderEndPoint, StreamStateInfo streamStateInfo)
         {
-            if (ParticipantStream.ContainsKey(participantInfo))
+            if (TrackStreams.ContainsKey(trackId))
             {
-                ParticipantStream[participantInfo].Add(videoEncoderEndPoint);
+                TrackStreams[trackId] = videoEncoderEndPoint;
             }
             else
             {
-                ParticipantStream.Add(participantInfo, new List<VideoEncoderEndPoint> { videoEncoderEndPoint });
+                TrackStreams.Add(trackId, videoEncoderEndPoint);
             }
             if (onStreamUpdated != null)
             {
-                onStreamUpdated?.Invoke(this, participantInfo);
+                onStreamUpdated?.Invoke(this, streamStateInfo);
             }
         }
+
+        public VideoEncoderEndPoint? GetTrackStream(string trackId) 
+        {
+            if (TrackStreams.TryGetValue(trackId, out var videoEncoderEndPoints))
+            {
+                return videoEncoderEndPoints;
+            }
+            return null;
+        }
+
 
         private void onStreamStateUpdate(List<StreamStateInfo> streamStateInfos)
         {
             foreach (var streamState in streamStateInfos)
             {
 
-                Debug.WriteLine($"Stream state updated for participant {streamState.ToString()}");
+                //Debug.WriteLine($"Stream state updated for participant {streamState.ToString()}");
 
                 //Stream state updated for participant { "participantSid": "PA_d8Z3swcgQpcd", "trackSid": "TR_VSoERp55Wn4MMk" }
 
@@ -611,7 +621,7 @@ namespace Client.Sdk.Dotnet.core
                     vp8VideoSink.GotVideoFrame(e, c, bmp, f);
                 };
 
-                UpdateParticipantStream(streamState.ParticipantSid, vp8VideoSink);
+                UpdateParticipantStream(streamState.TrackSid, vp8VideoSink,streamState);
 
             }
         }
@@ -706,9 +716,9 @@ namespace Client.Sdk.Dotnet.core
 
         private void onJoinResponse(SignalResponse signalResponse)
         {
-            UpdateRoom(joinResponse.Room);
-            UpdateLocalParticipant(joinResponse.Participant);
             joinResponse = signalResponse.Join;
+            UpdateRoom(signalResponse.Join.Room);
+            UpdateLocalParticipant(joinResponse.Participant);
             createIceServer();
             createSubPeerConnection();
         }
@@ -725,7 +735,7 @@ namespace Client.Sdk.Dotnet.core
                     break;
                 case LeaveRequest.Types.Action.Reconnect:
                     Debug.WriteLine("Reconnecting to the room.");
-                    await Connect();
+                    await ConnectAsync();
                     break;
                 case LeaveRequest.Types.Action.Resume:
                     Debug.WriteLine("Resuming the room connection.");
