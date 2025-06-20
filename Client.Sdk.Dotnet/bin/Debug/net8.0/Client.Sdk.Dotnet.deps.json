@@ -13,7 +13,7 @@
           "Grpc.Net.Client": "2.71.0",
           "Grpc.Tools": "2.72.0",
           "SIPSorcery": "8.0.14",
-          "SIPSorceryMedia.Encoders": "8.0.7",
+          "SIPSorceryMedia.Encoders": "1.0.0",
           "SIPSorceryMedia.FFmpeg": "8.0.10",
           "Serilog.Extensions.Logging": "3.0.1",
           "Serilog.Sinks.Console": "3.1.1"
@@ -328,17 +328,6 @@
           "lib/net8.0/SIPSorceryMedia.Abstractions.dll": {
             "assemblyVersion": "8.0.10.0",
             "fileVersion": "8.0.10.0"
-          }
-        }
-      },
-      "SIPSorceryMedia.Encoders/8.0.7": {
-        "dependencies": {
-          "SIPSorceryMedia.Abstractions": "8.0.10"
-        },
-        "runtime": {
-          "lib/netstandard2.0/SIPSorceryMedia.Encoders.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
           }
         }
       },
@@ -874,6 +863,17 @@
           "Microsoft.NETCore.Targets": "1.1.0",
           "System.Runtime": "4.3.0"
         }
+      },
+      "SIPSorceryMedia.Encoders/1.0.0": {
+        "dependencies": {
+          "SIPSorceryMedia.Abstractions": "8.0.10"
+        },
+        "runtime": {
+          "SIPSorceryMedia.Encoders.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
       }
     }
   },
@@ -1169,13 +1169,6 @@
       "sha512": "sha512-fQ+v/VHY9nuhtyTQJRKDYB1Fe26sOo6+4JbaQjm0GLRymRbL6Hz6YFbqG85/WjISGNm/2Y98eS9rJS4smZlNZA==",
       "path": "sipsorcerymedia.abstractions/8.0.10",
       "hashPath": "sipsorcerymedia.abstractions.8.0.10.nupkg.sha512"
-    },
-    "SIPSorceryMedia.Encoders/8.0.7": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-nfMqdeQCW0Z122QAbxpuQuanLtvF11a1QcsweAAv76Qo6lQglVLsKGoo9idVxxFU3U79r2afaFq/EMyNSe5phQ==",
-      "path": "sipsorcerymedia.encoders/8.0.7",
-      "hashPath": "sipsorcerymedia.encoders.8.0.7.nupkg.sha512"
     },
     "SIPSorceryMedia.FFmpeg/8.0.10": {
       "type": "package",
@@ -1533,6 +1526,11 @@
       "sha512": "sha512-Z6YfyYTCg7lOZjJzBjONJTFKGN9/NIYKSxhU5GRd+DTwHSZyvWp1xuI5aR+dLg+ayyC5Xv57KiY4oJ0tMO89fQ==",
       "path": "system.threading.timer/4.3.0",
       "hashPath": "system.threading.timer.4.3.0.nupkg.sha512"
+    },
+    "SIPSorceryMedia.Encoders/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     }
   }
 }

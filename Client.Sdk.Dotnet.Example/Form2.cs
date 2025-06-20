@@ -1,7 +1,10 @@
 ﻿using Client.Sdk.Dotnet.core;
+using Client.Sdk.Dotnet.hardware;
 using LiveKit.Proto;
+using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
+using SIPSorceryMedia.FFmpeg;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,9 +22,12 @@ namespace Client.Sdk.Dotnet.Example
     public partial class Form2 : Form
     {
         private Engine engine;
+
+        private HardWare hardWare = new HardWare();
         public Form2()
         {
             InitializeComponent();
+            hardWare.GetAllScreen();
             engine = new Engine("ws://127.0.0.1:7880", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTA2MDM2OTAsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXIxMSIsIm5iZiI6MTc1MDI1ODA5MCwic3ViIjoidGVzdF91c2VyMTEiLCJ2aWRlbyI6eyJyb29tIjoidGVzdF9yb29tIiwicm9vbUpvaW4iOnRydWV9fQ.u-iQ_L5-f9APZl6MkC8U54xtR5IqzGsZDraIx8zOQ6s");
             InitAsync().ConfigureAwait(false);
         }
@@ -49,7 +55,8 @@ namespace Client.Sdk.Dotnet.Example
 
 
 
-        private readonly Dictionary<string, PictureBox> _videoBoxes = new();
+        private Dictionary<string, PictureBox> _videoBoxes = new();
+
 
         private void AddOrUpdateVideoBox(string key)
         {
@@ -81,7 +88,8 @@ namespace Client.Sdk.Dotnet.Example
             }
         }
 
-        private void RenderFrameToBox(VideoEncoderEndPoint videoEncoder, StreamStateInfo streamStateInfo)
+
+        private void RenderFrameToBox(VideoStream videoStream, StreamStateInfo streamStateInfo)
         {
             Debug.WriteLine($"streamStateInfo: {streamStateInfo.ToString()}");
 
@@ -89,8 +97,29 @@ namespace Client.Sdk.Dotnet.Example
             {
                 AddOrUpdateVideoBox(streamStateInfo.TrackSid);
             }
+            else
+            {
+                return;
+            }
 
-            videoEncoder.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+            var videoEP = new VideoEncoderEndPoint();
+
+            //videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
+            //{
+            //    Debug.WriteLine($"RawImage：");
+
+
+            //    if (_videoBoxes.TryGetValue(streamStateInfo.TrackSid, out var pb))
+            //    {
+            //        if (rawImage.PixelFormat == VideoPixelFormatsEnum.Rgb)
+            //        {
+            //            Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
+            //            pb.Image = bmpImage;
+            //        }
+            //    }
+            //};
+
+            videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {
                 Debug.WriteLine($"TrackSid:{streamStateInfo.TrackSid} bytes width:{width} height:{height}");
                 // 假设 bmp 是 byte[]，你需要转 Bitmap
@@ -125,6 +154,11 @@ namespace Client.Sdk.Dotnet.Example
                 }
             };
 
+            videoStream.OnVideoFrameReceivedByIndex += (q, e, c, bmp, f) =>
+            {
+                Debug.WriteLine($"index:{q} bmpLength:{bmp.Length}");
+                videoEP.GotVideoFrame(e, c, bmp, f);
+            };
         }
     }
 }

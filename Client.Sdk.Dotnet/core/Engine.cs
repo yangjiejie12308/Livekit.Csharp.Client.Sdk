@@ -18,6 +18,7 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.FFmpeg;
+using static DirectShowLib.MediaSubType;
 
 namespace Client.Sdk.Dotnet.core
 {
@@ -118,7 +119,7 @@ namespace Client.Sdk.Dotnet.core
 
         }
 
-        public  LiveKit.Proto.Room room { get; set; }
+        public LiveKit.Proto.Room room { get; set; }
         public event EventHandler<LiveKit.Proto.Room> LiveKitConnectionQualityUpdated;
         private void UpdateRoom(LiveKit.Proto.Room room)
         {
@@ -319,11 +320,18 @@ namespace Client.Sdk.Dotnet.core
 
         }
 
+        VideoEncoderEndPoint videoEP = new VideoEncoderEndPoint();
+
         private void createSubPeerConnection()
         {
 
-            subscriberPeerConnection = new RTCPeerConnection(configuration);
+            if (subscriberPeerConnection != null) return;
 
+            MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
+            subscriberPeerConnection = new RTCPeerConnection(configuration);
+            subscriberPeerConnection.addTrack(videoTrack);
+            subscriberPeerConnection.OnVideoFormatsNegotiated += (formats) =>
+              videoEP.SetVideoSinkFormat(formats.First());
             subscriberPeerConnection.onicecandidate += async (candidate) =>
             {
 
@@ -349,7 +357,7 @@ namespace Client.Sdk.Dotnet.core
             {
                 if (state == RTCIceConnectionState.connected)
                 {
-
+                    Debug.WriteLine("订阅轨道连接成功!");
                 }
                 else if (state == RTCIceConnectionState.failed)
                 {
@@ -361,8 +369,8 @@ namespace Client.Sdk.Dotnet.core
                 }
             };
 
-
         }
+
 
         private async Task<Uri> GetBuildUri(string uriString, string token, bool reconnect = false,
             bool validate = false,
@@ -550,10 +558,10 @@ namespace Client.Sdk.Dotnet.core
             UpdateTrackSubscribedCodecs(trackSid, subscribedCodecs);
         }
 
-        public Dictionary<string, VideoEncoderEndPoint> TrackStreams = new Dictionary<string, VideoEncoderEndPoint>();
+        public Dictionary<string, VideoStream> TrackStreams = new Dictionary<string, VideoStream>();
 
         public event EventHandler<StreamStateInfo> onStreamUpdated;
-        private void UpdateParticipantStream(string trackId, VideoEncoderEndPoint videoEncoderEndPoint, StreamStateInfo streamStateInfo)
+        private void UpdateParticipantStream(string trackId, VideoStream videoEncoderEndPoint, StreamStateInfo streamStateInfo)
         {
             if (TrackStreams.ContainsKey(trackId))
             {
@@ -569,7 +577,7 @@ namespace Client.Sdk.Dotnet.core
             }
         }
 
-        public VideoEncoderEndPoint? GetTrackStream(string trackId) 
+        public VideoStream? GetTrackStream(string trackId)
         {
             if (TrackStreams.TryGetValue(trackId, out var videoEncoderEndPoints))
             {
@@ -588,7 +596,7 @@ namespace Client.Sdk.Dotnet.core
 
                 //Stream state updated for participant { "participantSid": "PA_d8Z3swcgQpcd", "trackSid": "TR_VSoERp55Wn4MMk" }
 
-                VideoEncoderEndPoint vp8VideoSink = new VideoEncoderEndPoint();
+                //VideoEncoderEndPoint vp8VideoSink = new VideoEncoderEndPoint();
 
                 //vp8VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
                 //{
@@ -616,12 +624,40 @@ namespace Client.Sdk.Dotnet.core
                     continue;
                 }
 
-                videoStream.OnVideoFrameReceivedByIndex += (q, e, c, bmp, f) =>
+
+                //videoStream.OnVideoFrameReceivedByIndex += (q, e, c, bmp, f) =>
+                //{
+                //    vp8VideoSink.GotVideoFrame(e, c, bmp, f);
+                //};
+
+                videoStream.OnIsClosedStateChanged += (isClosed) =>
                 {
-                    vp8VideoSink.GotVideoFrame(e, c, bmp, f);
+                    Debug.WriteLine($"VideoStream {streamState.TrackSid} is now {(isClosed ? "closed" : "open")}.");
+                    var track = videoStream.RemoteTrack;
+                    if (track != null)
+                    {
+                        videoStream.RemoteTrack = null;
+                        MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoEncoderEndPoint().GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
+                        videoStream.RemoteTrack = videoTrack;
+                    }
                 };
 
-                UpdateParticipantStream(streamState.TrackSid, vp8VideoSink,streamState);
+                videoStream.OnTimeoutByIndex += (q, b) =>
+                {
+                    Debug.WriteLine($"VideoStream {streamState.TrackSid} timeout.");
+                };
+
+                //videoStream.OnRtpPacketReceivedByIndex += (a, b, c, d) =>
+                //{
+                //    Debug.WriteLine($"VideoStream {streamState.TrackSid} received RTP packet: {a}, {b}, {c}, {d}");
+                //};
+
+                //videoStream.OnRtpHeaderReceivedByIndex += (a, b, c, d, e) =>
+                //{
+                //    Debug.WriteLine($"VideoStream {streamState.TrackSid} received RTP header: {a}, {b}, {c}, {d}");
+                //};
+
+                UpdateParticipantStream(streamState.TrackSid, videoStream, streamState);
 
             }
         }
@@ -667,14 +703,17 @@ namespace Client.Sdk.Dotnet.core
 
         private async Task onAcceptOffer(SignalResponse signalResponse)
         {
-            if (subscriberPeerConnection.VideoRemoteTrack != null)
-            {
-                subscriberPeerConnection.removeTrack(subscriberPeerConnection.VideoRemoteTrack);
-            }
+            //if (subscriberPeerConnection.VideoRemoteTrack != null)
+            //{
+            //    subscriberPeerConnection.removeTrack(subscriberPeerConnection.VideoRemoteTrack);
+            //}
 
-            VideoEncoderEndPoint vp8videosink = new VideoEncoderEndPoint();
-            MediaStreamTrack videotrack = new MediaStreamTrack(vp8videosink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            subscriberPeerConnection!.addTrack(videotrack);
+
+            createSubPeerConnection();
+
+            //VideoEncoderEndPoint vp8videosink = new VideoEncoderEndPoint();
+            //MediaStreamTrack videotrack = new MediaStreamTrack(vp8videosink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            //subscriberPeerConnection!.addTrack(videotrack);
 
 
             RTCSessionDescriptionInit rTCSessionDescriptionInit = new RTCSessionDescriptionInit();
@@ -720,7 +759,6 @@ namespace Client.Sdk.Dotnet.core
             UpdateRoom(signalResponse.Join.Room);
             UpdateLocalParticipant(joinResponse.Participant);
             createIceServer();
-            createSubPeerConnection();
         }
 
         private async Task onLeave(SignalResponse signalResponse)

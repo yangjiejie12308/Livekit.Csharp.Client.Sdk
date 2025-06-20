@@ -17,7 +17,6 @@
 		<PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
 		<PackageReference Include="SIPSorcery" Version="8.0.14" />
-		<PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
 		<PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.10" />
 	</ItemGroup>
 
@@ -32,6 +31,10 @@
 	  <Folder Include="participant\" />
 	  <Folder Include="publication\" />
 	  <Folder Include="stats\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj" />
 	</ItemGroup>
 
 </Project>
