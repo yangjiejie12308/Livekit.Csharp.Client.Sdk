@@ -7,14 +7,14 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Client.Sdk.Dotnet.Internal;
 using Client.Sdk.Dotnet.managers;
 using Client.Sdk.Dotnet.support;
 using Client.Sdk.Dotnet.support.websocket;
 using Google.Protobuf;
 using LiveKit.Proto;
-using SIPSorcery.Media;
-using SIPSorcery.Net;
+using Microsoft.MixedReality.WebRTC;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.FFmpeg;
@@ -24,9 +24,9 @@ namespace Client.Sdk.Dotnet.core
 {
     public class Engine : IDisposable
     {
-        private RTCPeerConnection? subscriberPeerConnection;
+        private PeerConnection? subscriberPeerConnection;
 
-        private RTCPeerConnection? publisherPeerConnection;
+        private PeerConnection? publisherPeerConnection;
 
         protected JoinResponse? joinResponse;
 
@@ -183,7 +183,7 @@ namespace Client.Sdk.Dotnet.core
 
         private LiveKitWebSocketIO WebSocketIO;
 
-        private SIPSorcery.Net.RTCConfiguration configuration;
+        private PeerConnectionConfiguration configuration;
 
         public string url;
 
@@ -211,13 +211,13 @@ namespace Client.Sdk.Dotnet.core
 
         protected void createIceServer()
         {
-            configuration = new SIPSorcery.Net.RTCConfiguration
+            configuration = new PeerConnectionConfiguration
             {
-                iceServers = joinResponse.IceServers.Select(iceServer => new RTCIceServer
+                IceServers = joinResponse.IceServers.Select(iceServer => new IceServer
                 {
-                    urls = JsonSerializer.Serialize(iceServer.Urls),
-                    username = iceServer.Username.IsNullOrEmpty() ? null : iceServer.Username,
-                    credential = iceServer.Credential.IsNullOrEmpty() ? null : iceServer.Credential
+                    Urls = iceServer.Urls.ToList(),
+                    TurnUserName = iceServer.Username.IsNullOrEmpty() ? null : iceServer.Username,
+                    TurnPassword = iceServer.Credential.IsNullOrEmpty() ? null : iceServer.Credential
                 }).ToList(),
             };
 
@@ -234,70 +234,127 @@ namespace Client.Sdk.Dotnet.core
             _pingTimer.Start();
         }
 
+        AudioTrackSource microphoneSource = null;
+        VideoTrackSource webcamSource = null;
+
+        LocalAudioTrack localAudioTrack = null;
+        LocalVideoTrack localVideoTrack = null;
+
+
         public async Task createPublisherPeerConnection()
         {
-            var testPatternSource = new FFmpegFileSource(@"E:\TDG\sipsorcery\examples\WebRTCExamples\WebRTCDaemon\media\max_intro.mp4", true, new AudioEncoder());
-            testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
+            //var testPatternSource = new FFmpegFileSource(@"E:\TDG\sipsorcery\examples\WebRTCExamples\WebRTCDaemon\media\max_intro.mp4", true, new AudioEncoder());
+            //testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
             // 创建发布者和订阅者的 PeerConnection
-            publisherPeerConnection = new RTCPeerConnection(configuration);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            MediaStreamTrack audoTrack = new MediaStreamTrack(testPatternSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            publisherPeerConnection.addTrack(videoTrack);
-            publisherPeerConnection.addTrack(audoTrack);
-
-            testPatternSource.OnVideoSourceEncodedSample += publisherPeerConnection.SendVideo;
-            testPatternSource.OnAudioSourceEncodedSample += publisherPeerConnection.SendAudio;
-
-            publisherPeerConnection.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
-            publisherPeerConnection.OnAudioFormatsNegotiated += (formats) => testPatternSource.SetAudioSourceFormat(formats.First());
-
-            publisherPeerConnection.onicecandidate += (candidate) =>
+            publisherPeerConnection = new PeerConnection();
+            await publisherPeerConnection.InitializeAsync(configuration);
+            Transceiver audioTransceiver = null;
+            Transceiver videoTransceiver = null;
+            webcamSource = await DeviceVideoTrackSource.CreateAsync();
+            var videoTrackConfig = new LocalVideoTrackInitConfig
             {
-                Debug.WriteLine(publisherPeerConnection.signalingState);
-                if (candidate == null || publisherPeerConnection.signalingState == RTCSignalingState.closed)
-                {
-                    return;
-                }
-                var trickleCandidate = new IceCandidate
-                {
-                    candidate = "candidate:" + candidate.candidate,
-                    sdpMid = candidate.sdpMid ?? "0",
-                    sdpMLineIndex = candidate.sdpMLineIndex,
-                };
+                trackName = "webcam_track"
+            };
+            localVideoTrack = LocalVideoTrack.CreateFromSource(webcamSource, videoTrackConfig);
+            microphoneSource = await DeviceAudioTrackSource.CreateAsync();
+            var audioTrackConfig = new LocalAudioTrackInitConfig
+            {
+                trackName = "microphone_track"
+            };
+            localAudioTrack = LocalAudioTrack.CreateFromSource(microphoneSource, audioTrackConfig);
+            videoTransceiver = publisherPeerConnection.AddTransceiver(MediaKind.Video);
+            videoTransceiver.LocalVideoTrack = localVideoTrack;
+            videoTransceiver.DesiredDirection = Transceiver.Direction.SendReceive;
+            audioTransceiver = publisherPeerConnection.AddTransceiver(MediaKind.Audio);
+            audioTransceiver.LocalAudioTrack = localAudioTrack;
+            audioTransceiver.DesiredDirection = Transceiver.Direction.SendReceive;
+
+
+            //MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            //MediaStreamTrack audoTrack = new MediaStreamTrack(testPatternSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            //publisherPeerConnection.addTrack(videoTrack);
+            //publisherPeerConnection.addTrack(audoTrack);
+
+            //testPatternSource.OnVideoSourceEncodedSample += publisherPeerConnection.SendVideo;
+            //testPatternSource.OnAudioSourceEncodedSample += publisherPeerConnection.SendAudio;
+
+            //publisherPeerConnection.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
+            //publisherPeerConnection.OnAudioFormatsNegotiated += (formats) => testPatternSource.SetAudioSourceFormat(formats.First());
+
+            //publisherPeerConnection.onicecandidate += (candidate) =>
+            //{
+            //    Debug.WriteLine(publisherPeerConnection.signalingState);
+            //    if (candidate == null || publisherPeerConnection.signalingState == RTCSignalingState.closed)
+            //    {
+            //        return;
+            //    }
+            //    var trickleCandidate = new IceCandidate
+            //    {
+            //        candidate = "candidate:" + candidate.candidate,
+            //        sdpMid = candidate.sdpMid ?? "0",
+            //        sdpMLineIndex = candidate.sdpMLineIndex,
+            //    };
+            //    SignalRequest signalRequest = new SignalRequest
+            //    {
+            //        Trickle = new TrickleRequest
+            //        {
+            //            Target = SignalTarget.Publisher,
+            //            CandidateInit = JsonSerializer.Serialize(trickleCandidate)
+            //        },
+            //    };
+            //    Debug.WriteLine($"PulishbPeer Send ICE candidate: {signalRequest}");
+
+            //    WebSocketIO.Send(signalRequest.ToByteArray());
+            //};
+            //publisherPeerConnection.oniceconnectionstatechange += async (state) =>
+            //{
+            //    if (state == RTCIceConnectionState.connected)
+            //    {
+            //        // 连接成功
+            //        Debug.WriteLine($"publisherPeerConnection: connected");
+            //        await testPatternSource.StartVideo();
+            //        await testPatternSource.StartAudio();
+            //    }
+            //    else if (state == RTCIceConnectionState.failed)
+            //    {
+            //        publisherPeerConnection.Close("ice disconnection");
+            //    }
+            //    else if (state == RTCIceConnectionState.closed)
+            //    {
+            //        // 连接关闭
+            //    }
+            //};
+
+            publisherPeerConnection.Connected += async () =>
+            {
+                Debug.WriteLine($"publisherPeerConnection: connected");
+            };
+
+            publisherPeerConnection.IceCandidateReadytoSend += (candidate) =>
+            {
+
                 SignalRequest signalRequest = new SignalRequest
                 {
                     Trickle = new TrickleRequest
                     {
                         Target = SignalTarget.Publisher,
-                        CandidateInit = JsonSerializer.Serialize(trickleCandidate)
+                        CandidateInit = JsonSerializer.Serialize(candidate)
                     },
                 };
                 Debug.WriteLine($"PulishbPeer Send ICE candidate: {signalRequest}");
 
                 WebSocketIO.Send(signalRequest.ToByteArray());
             };
-            publisherPeerConnection.oniceconnectionstatechange += async (state) =>
+
+            publisherPeerConnection.IceStateChanged += (IceConnectionState newState) =>
             {
-                if (state == RTCIceConnectionState.connected)
-                {
-                    // 连接成功
-                    Debug.WriteLine($"publisherPeerConnection: connected");
-                    await testPatternSource.StartVideo();
-                    await testPatternSource.StartAudio();
-                }
-                else if (state == RTCIceConnectionState.failed)
-                {
-                    publisherPeerConnection.Close("ice disconnection");
-                }
-                else if (state == RTCIceConnectionState.closed)
-                {
-                    // 连接关闭
-                }
+                Console.WriteLine($"ICE state: {newState}");
             };
+
 
             SignalRequest signalRequest = new SignalRequest();
             AddTrackRequest addTrackRequest = new AddTrackRequest();
-            addTrackRequest.Cid = videoTrack.SdpSsrc.Values.FirstOrDefault()?.ToString() ?? "default-video-cid";
+            addTrackRequest.Cid = webcamSource.Name ?? "default-video-cid";
             addTrackRequest.Name = "microphone";
             addTrackRequest.Type = TrackType.Video;
             addTrackRequest.Source = TrackSource.Camera;
@@ -306,68 +363,132 @@ namespace Client.Sdk.Dotnet.core
             addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
             signalRequest.AddTrack = addTrackRequest;
             WebSocketIO.Send(signalRequest.ToByteArray());
-            var result2 = publisherPeerConnection.createOffer(null);
-            await publisherPeerConnection.setLocalDescription(result2);
-            SignalRequest signalRequest3 = new SignalRequest();
-            signalRequest3.Offer = new SessionDescription
-            {
-                Sdp = result2.sdp,
-                Type = "offer"
+            publisherPeerConnection.LocalSdpReadytoSend += (peer) =>
+            { //await publisherPeerConnection.(result2);
+                SignalRequest signalRequest3 = new SignalRequest();
+                signalRequest3.Offer = new SessionDescription
+                {
+                    Sdp = peer.Content,
+                    Type = "offer"
+                };
+                WebSocketIO.Send(signalRequest3.ToByteArray());
+                //publisherPeerConnection.restartIce();
+                Debug.WriteLine($"subscriberPeerConnection: connected");
             };
-            WebSocketIO.Send(signalRequest3.ToByteArray());
-            publisherPeerConnection.restartIce();
-            Debug.WriteLine($"subscriberPeerConnection: connected");
+            var result2 = publisherPeerConnection.CreateOffer();
+
 
         }
 
         VideoEncoderEndPoint videoEP = new VideoEncoderEndPoint();
 
-        private void createSubPeerConnection()
+        private async Task createSubPeerConnection()
         {
 
-            if (subscriberPeerConnection != null) return;
-
-            MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
-            subscriberPeerConnection = new RTCPeerConnection(configuration);
-            subscriberPeerConnection.addTrack(videoTrack);
-            subscriberPeerConnection.OnVideoFormatsNegotiated += (formats) =>
-              videoEP.SetVideoSinkFormat(formats.First());
-            subscriberPeerConnection.onicecandidate += async (candidate) =>
+            subscriberPeerConnection = new PeerConnection();
+            subscriberPeerConnection.Connected += () =>
             {
+                // 连接成功
+                Debug.WriteLine($"subscriberPeerConnection: connected");
+            };
+            subscriberPeerConnection.IceCandidateReadytoSend += (candidate) =>
+            {
+                if (candidate == null) return;
 
-                var trickleCandidate = new IceCandidate
-                {
-                    candidate = "candidate:" + candidate.candidate,
-                    sdpMid = candidate.sdpMid ?? "0",
-                    sdpMLineIndex = candidate.sdpMLineIndex,
-                };
+                Internal.IceCandidate iceCandidate = new Internal.IceCandidate();
+                iceCandidate.candidate = candidate.Content;
+                iceCandidate.sdpMid = candidate.SdpMid ?? "0";
+                iceCandidate.sdpMLineIndex = candidate.SdpMlineIndex;
+
                 SignalRequest signalRequest = new SignalRequest
                 {
                     Trickle = new TrickleRequest
                     {
                         Target = SignalTarget.Subscriber,
-                        CandidateInit = JsonSerializer.Serialize(trickleCandidate),
+                        CandidateInit = JsonSerializer.Serialize(iceCandidate),
                     },
                 };
 
                 WebSocketIO.Send(signalRequest.ToByteArray());
             };
-
-            subscriberPeerConnection.oniceconnectionstatechange += async (state) =>
+            subscriberPeerConnection.LocalSdpReadytoSend += (sdps) =>
             {
-                if (state == RTCIceConnectionState.connected)
+                //Debug.WriteLine($"local_sdp:{sdps.Content}");
+                SignalRequest signalRequest = new SignalRequest();
+                signalRequest.Answer = new SessionDescription
                 {
-                    Debug.WriteLine("订阅轨道连接成功!");
-                }
-                else if (state == RTCIceConnectionState.failed)
-                {
-                    subscriberPeerConnection.Close("ice disconnection");
-                }
-                else if (state == RTCIceConnectionState.closed)
-                {
-                    // 连接关闭
-                }
+                    Sdp = sdps.Content,
+                    Type = "answer",
+                };
+                WebSocketIO.Send(signalRequest.ToByteArray());
+                //subscriberPeerConnection.res();
             };
+            subscriberPeerConnection.IceStateChanged += (IceConnectionState newState) =>
+            {
+                Console.WriteLine($"ICE state: {newState}");
+            };
+            subscriberPeerConnection.VideoTrackAdded += (track) =>
+            {
+                UpdateParticipantStream(track.Name, track);
+            };
+            subscriberPeerConnection.VideoTrackRemoved += (t, track) =>
+            {
+                Debug.WriteLine($"Audio track removed: {track.Name}");
+                UpdateParticipantStream(track.Name, track);
+            };
+            await subscriberPeerConnection.InitializeAsync(configuration);
+            Transceiver videoTransceiver = subscriberPeerConnection.AddTransceiver(MediaKind.Video);
+            //videoTransceiver.LocalVideoTrack = localVideoTrack;
+            videoTransceiver.DesiredDirection = Transceiver.Direction.ReceiveOnly;
+            Transceiver audioTransceiver = subscriberPeerConnection.AddTransceiver(MediaKind.Audio);
+            //audioTransceiver.LocalAudioTrack = localAudioTrack;
+            audioTransceiver.DesiredDirection = Transceiver.Direction.ReceiveOnly;
+
+
+
+
+
+            //MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
+            //subscriberPeerConnection = new RTCPeerConnection(configuration);
+            //subscriberPeerConnection.addTrack(videoTrack);
+            //subscriberPeerConnection.OnVideoFormatsNegotiated += (formats) =>
+            //  videoEP.SetVideoSinkFormat(formats.First());
+            //subscriberPeerConnection.onicecandidate += async (candidate) =>
+            //{
+
+            //    var trickleCandidate = new IceCandidate
+            //    {
+            //        candidate = "candidate:" + candidate.candidate,
+            //        sdpMid = candidate.sdpMid ?? "0",
+            //        sdpMLineIndex = candidate.sdpMLineIndex,
+            //    };
+            //    SignalRequest signalRequest = new SignalRequest
+            //    {
+            //        Trickle = new TrickleRequest
+            //        {
+            //            Target = SignalTarget.Subscriber,
+            //            CandidateInit = JsonSerializer.Serialize(trickleCandidate),
+            //        },
+            //    };
+
+            //    WebSocketIO.Send(signalRequest.ToByteArray());
+            //};
+
+            //subscriberPeerConnection.oniceconnectionstatechange += async (state) =>
+            //{
+            //    if (state == RTCIceConnectionState.connected)
+            //    {
+            //        Debug.WriteLine("订阅轨道连接成功!");
+            //    }
+            //    else if (state == RTCIceConnectionState.failed)
+            //    {
+            //        subscriberPeerConnection.Close("ice disconnection");
+            //    }
+            //    else if (state == RTCIceConnectionState.closed)
+            //    {
+            //        // 连接关闭
+            //    }
+            //};
 
         }
 
@@ -469,7 +590,7 @@ namespace Client.Sdk.Dotnet.core
                     // 处理加入房间的响应
                     break;
                 case SignalResponse.MessageOneofCase.Offer:
-                    await onAcceptOffer(signalResponse);
+                    onAcceptOffer(signalResponse);
                     break;
                 case SignalResponse.MessageOneofCase.Answer:
                     onReceiveAnswer(signalResponse);
@@ -558,26 +679,26 @@ namespace Client.Sdk.Dotnet.core
             UpdateTrackSubscribedCodecs(trackSid, subscribedCodecs);
         }
 
-        public Dictionary<string, VideoStream> TrackStreams = new Dictionary<string, VideoStream>();
+        public Dictionary<string, RemoteVideoTrack> TrackStreams = new Dictionary<string, RemoteVideoTrack>();
 
-        public event EventHandler<StreamStateInfo> onStreamUpdated;
-        private void UpdateParticipantStream(string trackId, VideoStream videoEncoderEndPoint, StreamStateInfo streamStateInfo)
+        public event EventHandler<RemoteVideoTrack> onStreamUpdated;
+        private void UpdateParticipantStream(string trackId, RemoteVideoTrack videoTrack)
         {
             if (TrackStreams.ContainsKey(trackId))
             {
-                TrackStreams[trackId] = videoEncoderEndPoint;
+                TrackStreams.Remove(trackId);
             }
             else
             {
-                TrackStreams.Add(trackId, videoEncoderEndPoint);
+                TrackStreams.Add(trackId, videoTrack);
             }
             if (onStreamUpdated != null)
             {
-                onStreamUpdated?.Invoke(this, streamStateInfo);
+                onStreamUpdated?.Invoke(this, videoTrack);
             }
         }
 
-        public VideoStream? GetTrackStream(string trackId)
+        public RemoteVideoTrack? GetTrackStream(string trackId)
         {
             if (TrackStreams.TryGetValue(trackId, out var videoEncoderEndPoints))
             {
@@ -616,48 +737,49 @@ namespace Client.Sdk.Dotnet.core
                 //    RenderFrameToBox(streamState.TrackSid, (Bitmap)bitmap.Clone());
                 //};
 
-                VideoStream videoStream = subscriberPeerConnection.VideoStreamList.Where(v => v.RemoteTrack.SdpSsrc.Values.Any(s => s.Cname.Contains(streamState.ParticipantSid) && s.Cname.Contains(streamState.TrackSid))).FirstOrDefault();
 
-                if (videoStream == null)
-                {
-                    Debug.WriteLine("未找到对应的 VideoStream，可能 SDP 协商后 track/ssrc 变了。");
-                    continue;
-                }
+                //VideoStream videoStream = subscriberPeerConnection.VideoStreamList.Where(v => v.RemoteTrack.SdpSsrc.Values.Any(s => s.Cname.Contains(streamState.ParticipantSid) && s.Cname.Contains(streamState.TrackSid))).FirstOrDefault();
 
-
-                //videoStream.OnVideoFrameReceivedByIndex += (q, e, c, bmp, f) =>
+                //if (videoStream == null)
                 //{
-                //    vp8VideoSink.GotVideoFrame(e, c, bmp, f);
+                //    Debug.WriteLine("未找到对应的 VideoStream，可能 SDP 协商后 track/ssrc 变了。");
+                //    continue;
+                //}
+
+
+                ////videoStream.OnVideoFrameReceivedByIndex += (q, e, c, bmp, f) =>
+                ////{
+                ////    vp8VideoSink.GotVideoFrame(e, c, bmp, f);
+                ////};
+
+                //videoStream.OnIsClosedStateChanged += (isClosed) =>
+                //{
+                //    Debug.WriteLine($"VideoStream {streamState.TrackSid} is now {(isClosed ? "closed" : "open")}.");
+                //    var track = videoStream.RemoteTrack;
+                //    if (track != null)
+                //    {
+                //        videoStream.RemoteTrack = null;
+                //        MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoEncoderEndPoint().GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
+                //        videoStream.RemoteTrack = videoTrack;
+                //    }
                 //};
 
-                videoStream.OnIsClosedStateChanged += (isClosed) =>
-                {
-                    Debug.WriteLine($"VideoStream {streamState.TrackSid} is now {(isClosed ? "closed" : "open")}.");
-                    var track = videoStream.RemoteTrack;
-                    if (track != null)
-                    {
-                        videoStream.RemoteTrack = null;
-                        MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoEncoderEndPoint().GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
-                        videoStream.RemoteTrack = videoTrack;
-                    }
-                };
-
-                videoStream.OnTimeoutByIndex += (q, b) =>
-                {
-                    Debug.WriteLine($"VideoStream {streamState.TrackSid} timeout.");
-                };
-
-                //videoStream.OnRtpPacketReceivedByIndex += (a, b, c, d) =>
+                //videoStream.OnTimeoutByIndex += (q, b) =>
                 //{
-                //    Debug.WriteLine($"VideoStream {streamState.TrackSid} received RTP packet: {a}, {b}, {c}, {d}");
+                //    Debug.WriteLine($"VideoStream {streamState.TrackSid} timeout.");
                 //};
 
-                //videoStream.OnRtpHeaderReceivedByIndex += (a, b, c, d, e) =>
-                //{
-                //    Debug.WriteLine($"VideoStream {streamState.TrackSid} received RTP header: {a}, {b}, {c}, {d}");
-                //};
+                ////videoStream.OnRtpPacketReceivedByIndex += (a, b, c, d) =>
+                ////{
+                ////    Debug.WriteLine($"VideoStream {streamState.TrackSid} received RTP packet: {a}, {b}, {c}, {d}");
+                ////};
 
-                UpdateParticipantStream(streamState.TrackSid, videoStream, streamState);
+                ////videoStream.OnRtpHeaderReceivedByIndex += (a, b, c, d, e) =>
+                ////{
+                ////    Debug.WriteLine($"VideoStream {streamState.TrackSid} received RTP header: {a}, {b}, {c}, {d}");
+                ////};
+
+                //UpdateParticipantStream(streamState.TrackSid, videoStream, streamState);
 
             }
         }
@@ -701,56 +823,68 @@ namespace Client.Sdk.Dotnet.core
                 onTrackSubscribedEvent.Invoke(this, signalResponse.TrackSubscribed);
         }
 
-        private async Task onAcceptOffer(SignalResponse signalResponse)
+        private async void onAcceptOffer(SignalResponse signalResponse)
         {
             //if (subscriberPeerConnection.VideoRemoteTrack != null)
             //{
             //    subscriberPeerConnection.removeTrack(subscriberPeerConnection.VideoRemoteTrack);
             //}
 
+            if (subscriberPeerConnection == null)
+            {
+                await createSubPeerConnection();
+            }
 
-            createSubPeerConnection();
 
             //VideoEncoderEndPoint vp8videosink = new VideoEncoderEndPoint();
             //MediaStreamTrack videotrack = new MediaStreamTrack(vp8videosink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             //subscriberPeerConnection!.addTrack(videotrack);
 
 
-            RTCSessionDescriptionInit rTCSessionDescriptionInit = new RTCSessionDescriptionInit();
-            rTCSessionDescriptionInit.sdp = signalResponse.Offer.Sdp;
-            rTCSessionDescriptionInit.type = RTCSdpType.offer;
-            var result = subscriberPeerConnection!.setRemoteDescription(rTCSessionDescriptionInit);
+            //RTCSessionDescriptionInit rTCSessionDescriptionInit = new RTCSessionDescriptionInit();
+            //rTCSessionDescriptionInit.sdp = signalResponse.Offer.Sdp;
+            //rTCSessionDescriptionInit.type = RTCSdpType.offer;
 
-            if (result == SetDescriptionResultEnum.OK)
+            SdpMessage sdpMessage = new SdpMessage();
+            sdpMessage.Content = signalResponse.Offer.Sdp;
+            sdpMessage.Type = SdpMessageType.Offer;
+            //subscriberPeerConnection.LocalSdpReadytoSend += (sdps) =>
+            //{
+            //    SignalRequest signalRequest = new SignalRequest();
+            //    signalRequest.Answer = new SessionDescription
+            //    {
+            //        Sdp = sdps.Content,
+            //        Type = "answer",
+            //    };
+            //    WebSocketIO.Send(signalRequest.ToByteArray());
+            //    //subscriberPeerConnection.res();
+            //};
+            await subscriberPeerConnection!.SetRemoteDescriptionAsync(sdpMessage).ContinueWith((t) =>
             {
-                var answer = subscriberPeerConnection.createAnswer();
-                await subscriberPeerConnection.setLocalDescription(answer);
-                SignalRequest signalRequest = new SignalRequest();
-                signalRequest.Answer = new SessionDescription
+                bool result = subscriberPeerConnection.CreateAnswer();
+                if (!result)
                 {
-                    Sdp = answer.sdp,
-                    Type = "answer",
-                };
-                WebSocketIO.Send(signalRequest.ToByteArray());
-                subscriberPeerConnection.restartIce();
-            }
-            else
-            {
-                Debug.WriteLine("Failed to set remote description for subscriber.");
-            }
-            Debug.WriteLine($"Received signal : {signalResponse?.MessageCase}");
+                    Debug.WriteLine("Failed to create peer connection answer, closing peer connection.");
+                    subscriberPeerConnection.Close();
+                }
+            });
+
         }
 
-        private void onReceiveAnswer(SignalResponse signalResponse)
+        private async Task onReceiveAnswer(SignalResponse signalResponse)
         {
-            RTCSessionDescriptionInit rTCSessionDescriptionInit2 = new RTCSessionDescriptionInit();
-            rTCSessionDescriptionInit2.sdp = signalResponse.Answer.Sdp;
-            rTCSessionDescriptionInit2.type = RTCSdpType.answer;
-            var answerResult = publisherPeerConnection!.setRemoteDescription(rTCSessionDescriptionInit2);
-            if (answerResult != SetDescriptionResultEnum.OK)
-            {
-                Debug.WriteLine("Failed to set remote description for publisher.");
-            }
+            //RTCSessionDescriptionInit rTCSessionDescriptionInit2 = new RTCSessionDescriptionInit();
+            //rTCSessionDescriptionInit2.sdp = signalResponse.Answer.Sdp;
+            //rTCSessionDescriptionInit2.type = RTCSdpType.answer;
+            SdpMessage sdpMessage = new SdpMessage();
+            sdpMessage.Content = signalResponse.Answer.Sdp;
+            sdpMessage.Type = SdpMessageType.Answer;
+
+            await publisherPeerConnection!.SetRemoteDescriptionAsync(sdpMessage);
+            //if (answerResult != SetDescriptionResultEnum.OK)
+            //{
+            //    Debug.WriteLine("Failed to set remote description for publisher.");
+            //}
         }
 
         private void onJoinResponse(SignalResponse signalResponse)
@@ -787,14 +921,14 @@ namespace Client.Sdk.Dotnet.core
 
             if (signalResponse.Trickle.Target == SignalTarget.Subscriber)
             {
-                var jsObj = JsonSerializer.Deserialize<IceCandidate>(signalResponse.Trickle.CandidateInit);
-                var trickleCandidate = new RTCIceCandidateInit
+                var jsObj = JsonSerializer.Deserialize<Internal.IceCandidate>(signalResponse.Trickle.CandidateInit);
+                var trickleCandidate = new Microsoft.MixedReality.WebRTC.IceCandidate
                 {
-                    candidate = jsObj.candidate.Replace("candidate:", ""),
-                    sdpMid = jsObj.sdpMid,
-                    sdpMLineIndex = jsObj.sdpMLineIndex
+                    Content = jsObj.candidate,
+                    SdpMid = jsObj.sdpMid,
+                    SdpMlineIndex = jsObj.sdpMLineIndex
                 };
-                subscriberPeerConnection.addIceCandidate(trickleCandidate);
+                subscriberPeerConnection.AddIceCandidate(trickleCandidate);
 
                 if (signalResponse.Trickle.Final)
                 {
@@ -804,14 +938,14 @@ namespace Client.Sdk.Dotnet.core
             }
             else
             {
-                var jsObj = JsonSerializer.Deserialize<IceCandidate>(signalResponse.Trickle.CandidateInit);
-                var trickleCandidate = new RTCIceCandidateInit
+                var jsObj = JsonSerializer.Deserialize<Internal.IceCandidate>(signalResponse.Trickle.CandidateInit);
+                var trickleCandidate = new Microsoft.MixedReality.WebRTC.IceCandidate
                 {
-                    candidate = jsObj.candidate.Replace("candidate:", ""),
-                    sdpMid = jsObj.sdpMid ?? "0",
-                    sdpMLineIndex = jsObj.sdpMLineIndex
+                    Content = jsObj.candidate,
+                    SdpMid = jsObj.sdpMid ?? "0",
+                    SdpMlineIndex = jsObj.sdpMLineIndex
                 };
-                publisherPeerConnection.addIceCandidate(trickleCandidate);
+                publisherPeerConnection.AddIceCandidate(trickleCandidate);
             }
         }
 

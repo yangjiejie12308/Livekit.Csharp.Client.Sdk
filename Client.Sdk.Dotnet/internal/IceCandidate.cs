@@ -10,6 +10,6 @@ namespace Client.Sdk.Dotnet.Internal
     {
         public string candidate { get; set; }
         public string sdpMid { get; set; }
-        public ushort sdpMLineIndex { get; set; }
+        public int sdpMLineIndex { get; set; }
     }
 }
