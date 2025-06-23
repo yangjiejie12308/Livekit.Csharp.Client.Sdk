@@ -16,6 +16,7 @@ using Google.Protobuf;
 using LiveKit.Proto;
 using Microsoft.MixedReality.WebRTC;
 using static DirectShowLib.MediaSubType;
+using static Microsoft.MixedReality.WebRTC.PeerConnection;
 
 namespace Client.Sdk.Dotnet.core
 {
@@ -91,7 +92,7 @@ namespace Client.Sdk.Dotnet.core
 
         public Dictionary<string, ConnectionQualityInfo> ParticipantConnectionQuality = new Dictionary<string, ConnectionQualityInfo>();
 
-        public event EventHandler<string> ParticipantConnectionQualityUpdated;
+        public event EventHandler<string> onParticipantConnectionQualityUpdated;
         private void UpdateParticipantConnectionQuality(ConnectionQualityInfo connectionQualityInfo)
         {
             if (ParticipantConnectionQuality.ContainsKey(connectionQualityInfo.ParticipantSid))
@@ -102,8 +103,8 @@ namespace Client.Sdk.Dotnet.core
             {
                 ParticipantConnectionQuality.Add(connectionQualityInfo.ParticipantSid, connectionQualityInfo);
             }
-            if (ParticipantConnectionQualityUpdated != null)
-                ParticipantConnectionQualityUpdated?.Invoke(this, connectionQualityInfo.ParticipantSid);
+            if (onParticipantConnectionQualityUpdated != null)
+                onParticipantConnectionQualityUpdated?.Invoke(this, connectionQualityInfo.ParticipantSid);
         }
 
         public ConnectionQualityInfo GetParticipantConnectionQuality(string sid)
@@ -137,6 +138,63 @@ namespace Client.Sdk.Dotnet.core
                     if (RemoteParticipants.Any(v => v.Identity == item.Identity))
                     {
                         int index = RemoteParticipants.IndexOf(RemoteParticipants.FirstOrDefault(v => v.Identity == item.Identity));
+
+                        foreach (var item1 in RemoteParticipants[index].Tracks)
+                        {
+                            if (item.Tracks.Any(v => v.Sid == item1.Sid))
+                            {
+                                var track = item.Tracks.FirstOrDefault(v => v.Sid == item1.Sid);
+                                if (track.Muted && !item1.Muted)
+                                {
+                                    Debug.WriteLine($"Track {track.Sid} muted state changed from {item1.Muted} to {track.Muted} for participant {RemoteParticipants[index].Sid}");
+                                    // mute
+                                    switch (track.Type)
+                                    {
+                                        case TrackType.Audio:
+                                            if (onAudioTrackMuted != null)
+                                                onAudioTrackMuted.Invoke(this, (RemoteParticipants[index].Sid, track.Sid));
+                                            break;
+                                        case TrackType.Video:
+                                            if (onVideoTrackMuted != null)
+                                                onVideoTrackMuted.Invoke(this, (RemoteParticipants[index].Sid, track.Sid));
+                                            break;
+                                    }
+                                }
+                                else if (!track.Muted && item1.Muted)
+                                {
+                                    Debug.WriteLine($"Track {track.Sid} muted state changed from {item1.Muted} to {track.Muted} for participant {RemoteParticipants[index].Sid}");
+                                    // unmute
+                                    switch (track.Type)
+                                    {
+                                        case TrackType.Audio:
+                                            if (onAudioTrackUnMuted != null)
+                                                onAudioTrackUnMuted.Invoke(this, (RemoteParticipants[index].Sid, track.Sid));
+                                            break;
+                                        case TrackType.Video:
+                                            if (onVideoTrackUnMuted != null)
+                                                onVideoTrackUnMuted.Invoke(this, (RemoteParticipants[index].Sid, track.Sid));
+                                            break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // 取消了流发布
+                                switch (item1.Type)
+                                {
+                                    case TrackType.Video:
+                                        Debug.WriteLine($"Video track removed: {item1.Sid} from participant {RemoteParticipants[index].Sid}");
+                                        if (onVideoTrackRemoved != null) onVideoTrackRemoved?.Invoke(this, (RemoteParticipants[index].Sid, item1.Sid));
+                                        break;
+                                    case TrackType.Audio:
+                                        Debug.WriteLine($"Audio track removed: {item1.Sid} from participant {RemoteParticipants[index].Sid}");
+                                        if (onAudioTrackRemoved != null) onAudioTrackRemoved?.Invoke(this, (RemoteParticipants[index].Sid, item1.Sid));
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
 
                         RemoteParticipants[index] = item;
 
@@ -237,6 +295,19 @@ namespace Client.Sdk.Dotnet.core
         LocalAudioTrack localAudioTrack = null;
         LocalVideoTrack localVideoTrack = null;
 
+        public void Subscribe(string trackId, VideoQuality Quality)
+        {
+            SignalRequest signalRequest = new SignalRequest
+            {
+                TrackSetting = new UpdateTrackSettings
+                {
+                    TrackSids = { trackId },
+                    Quality = Quality,
+                    Disabled = false
+                }
+            };
+            WebSocketIO.Send(signalRequest.ToByteArray());
+        }
 
         public async Task createPublisherPeerConnection()
         {
@@ -358,7 +429,7 @@ namespace Client.Sdk.Dotnet.core
                 signalRequest.Answer = new SessionDescription
                 {
                     Sdp = sdps.Content,
-                    Type = sdps.Type==SdpMessageType.Answer?  "answer":"offer",
+                    Type = sdps.Type == SdpMessageType.Answer ? "answer" : "offer",
                 };
                 WebSocketIO.Send(signalRequest.ToByteArray());
                 //subscriberPeerConnection.res();
@@ -374,6 +445,22 @@ namespace Client.Sdk.Dotnet.core
             subscriberPeerConnection.VideoTrackRemoved += (t, track) =>
             {
                 VideoTrackRemoved(track.Name, track);
+            };
+            subscriberPeerConnection.AudioTrackAdded += (
+                track) =>
+            {
+                Debug.WriteLine($"Audio track added: {track.Name}");
+                if (usedTrackName.Contains(track.Name))
+                {
+                    track.SetName("readyToSet");
+                }
+            };
+
+            subscriberPeerConnection.AudioTrackRemoved += (t, track) =>
+            {
+                Debug.WriteLine($"Audio track removed: {track.Name}");
+                usedTrackName.Add(track.Name);
+
             };
 
             await subscriberPeerConnection.InitializeAsync(configuration);
@@ -508,7 +595,6 @@ namespace Client.Sdk.Dotnet.core
                     onRoomUpdate(signalResponse);
                     break;
                 case SignalResponse.MessageOneofCase.Update:
-                    Debug.WriteLine(signalResponse.ToString());
                     onUpdate(signalResponse);
                     break;
                 case SignalResponse.MessageOneofCase.TrackUnpublished:
@@ -573,16 +659,30 @@ namespace Client.Sdk.Dotnet.core
         }
 
         public event EventHandler<(string, string)> onVideoTrackAdded;
-        public event EventHandler<(string,string)> onVideoTrackRemoved;
+        public event EventHandler<(string, string)> onVideoTrackRemoved;
+        public event EventHandler<(string, string)> onAudioTrackAdded;
+        public event EventHandler<(string, string)> onAudioTrackRemoved;
+        public event EventHandler<(string, string)> onVideoTrackMuted;
+        public event EventHandler<(string, string)> onAudioTrackMuted;
+        public event EventHandler<(string, string)> onVideoTrackUnMuted;
+        public event EventHandler<(string, string)> onAudioTrackUnMuted;
+
+        private List<string> usedTrackName = new List<string>();
 
         private void VideoTrackAdded(string trackId, RemoteVideoTrack videoTrack)
         {
             Debug.WriteLine($"Video track added: {trackId}");
+            if (usedTrackName.Contains(trackId))
+            {
+                videoTrack.SetName("readyToSet");
+            }
         }
 
         private void VideoTrackRemoved(string trackId, RemoteVideoTrack videoTrack)
         {
             Debug.WriteLine($"Video track removed: {trackId}");
+            usedTrackName.Add(trackId);
+
         }
 
         public RemoteVideoTrack? GetTrackStream(string trackId)
@@ -590,6 +690,10 @@ namespace Client.Sdk.Dotnet.core
             return subscriberPeerConnection.RemoteVideoTracks.FirstOrDefault(v => v.Name == trackId);
         }
 
+        public RemoteAudioTrack? GetAudioTrackStream(string trackId)
+        {
+            return subscriberPeerConnection.RemoteAudioTracks.FirstOrDefault(v => v.Name == trackId);
+        }
         private void onStreamStateUpdate(List<StreamStateInfo> streamStateInfos)
         {
             foreach (var streamState in streamStateInfos)
@@ -600,9 +704,26 @@ namespace Client.Sdk.Dotnet.core
                 {
                     if (RemoteParticipants.FirstOrDefault(v => v.Sid == streamState.ParticipantSid).Tracks.FirstOrDefault(v => v.Sid == streamState.TrackSid).Type == TrackType.Video)
                     {
+                        if (subscriberPeerConnection.RemoteVideoTracks.Count(v => v.Name == streamState.TrackSid) == 0)
+                        {
+                            subscriberPeerConnection.RemoteVideoTracks.FirstOrDefault(v => v.Name == "readyToSet")!.Name = streamState.TrackSid;
+                        }
+
                         if (onVideoTrackAdded != null)
                         {
                             onVideoTrackAdded.Invoke(this, (streamState.ParticipantSid, streamState.TrackSid));
+                        }
+                    }
+                    else if (RemoteParticipants.FirstOrDefault(v => v.Sid == streamState.ParticipantSid).Tracks.FirstOrDefault(v => v.Sid == streamState.TrackSid).Type == TrackType.Audio)
+                    {
+                        if (subscriberPeerConnection.RemoteAudioTracks.Count(v => v.Name == streamState.TrackSid) == 0)
+                        {
+                            subscriberPeerConnection.RemoteAudioTracks.FirstOrDefault(v => v.Name == "readyToSet")!.Name = streamState.TrackSid;
+                        }
+
+                        if (onAudioTrackAdded != null)
+                        {
+                            onAudioTrackAdded.Invoke(this, (streamState.ParticipantSid, streamState.TrackSid));
                         }
                     }
                 }
@@ -615,85 +736,25 @@ namespace Client.Sdk.Dotnet.core
                             onVideoTrackRemoved.Invoke(this, (streamState.ParticipantSid, streamState.TrackSid));
                         }
                     }
+                    else if (RemoteParticipants.FirstOrDefault(v => v.Sid == streamState.ParticipantSid).Tracks.FirstOrDefault(v => v.Sid == streamState.TrackSid).Type == TrackType.Audio)
+                    {
+                        if (onAudioTrackRemoved != null)
+                        {
+                            onAudioTrackRemoved.Invoke(this, (streamState.ParticipantSid, streamState.TrackSid));
+                        }
+                    }
                 }
-
-                //Stream state updated for participant { "participantSid": "PA_d8Z3swcgQpcd", "trackSid": "TR_VSoERp55Wn4MMk" }
-
-                //VideoEncoderEndPoint vp8VideoSink = new VideoEncoderEndPoint();
-
-                //vp8VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
-                //{
-
-                //    // 假设 bmp 是 byte[]，你需要转 Bitmap
-                //    using var bitmap = new Bitmap((int)width, (int)height, PixelFormat.Format24bppRgb);
-
-
-                //    var bmpData = bitmap.LockBits(
-                //        new Rectangle(0, 0, (int)width, (int)height),
-                //        System.Drawing.Imaging.ImageLockMode.WriteOnly,
-                //        bitmap.PixelFormat);
-
-                //    System.Runtime.InteropServices.Marshal.Copy(bmp, 0, bmpData.Scan0, bmp.Length);
-                //    bitmap.UnlockBits(bmpData);
-
-                //    RenderFrameToBox(streamState.TrackSid, (Bitmap)bitmap.Clone());
-                //};
-
-
-                //VideoStream videoStream = subscriberPeerConnection.VideoStreamList.Where(v => v.RemoteTrack.SdpSsrc.Values.Any(s => s.Cname.Contains(streamState.ParticipantSid) && s.Cname.Contains(streamState.TrackSid))).FirstOrDefault();
-
-                //if (videoStream == null)
-                //{
-                //    Debug.WriteLine("未找到对应的 VideoStream，可能 SDP 协商后 track/ssrc 变了。");
-                //    continue;
-                //}
-
-
-                ////videoStream.OnVideoFrameReceivedByIndex += (q, e, c, bmp, f) =>
-                ////{
-                ////    vp8VideoSink.GotVideoFrame(e, c, bmp, f);
-                ////};
-
-                //videoStream.OnIsClosedStateChanged += (isClosed) =>
-                //{
-                //    Debug.WriteLine($"VideoStream {streamState.TrackSid} is now {(isClosed ? "closed" : "open")}.");
-                //    var track = videoStream.RemoteTrack;
-                //    if (track != null)
-                //    {
-                //        videoStream.RemoteTrack = null;
-                //        MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoEncoderEndPoint().GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
-                //        videoStream.RemoteTrack = videoTrack;
-                //    }
-                //};
-
-                //videoStream.OnTimeoutByIndex += (q, b) =>
-                //{
-                //    Debug.WriteLine($"VideoStream {streamState.TrackSid} timeout.");
-                //};
-
-                ////videoStream.OnRtpPacketReceivedByIndex += (a, b, c, d) =>
-                ////{
-                ////    Debug.WriteLine($"VideoStream {streamState.TrackSid} received RTP packet: {a}, {b}, {c}, {d}");
-                ////};
-
-                ////videoStream.OnRtpHeaderReceivedByIndex += (a, b, c, d, e) =>
-                ////{
-                ////    Debug.WriteLine($"VideoStream {streamState.TrackSid} received RTP header: {a}, {b}, {c}, {d}");
-                ////};
-
-                //UpdateParticipantStream(streamState.TrackSid, videoStream, streamState);
-
             }
         }
 
-        public event EventHandler<(string, bool)> onMuted;
+
         private void onMute(string sid, bool muted)
         {
-            //Debug.WriteLine($"Track {sid} is now {(mute ? "muted" : "unmuted")}.");
-            if (onMuted != null)
-            {
-                onMuted?.Invoke(this, (sid, muted));
-            }
+            Debug.WriteLine($"{sid}:::::::::::::::::::::::{muted}");
+            //if (onMuted != null)
+            //{
+            //    onMuted?.Invoke(this, (sid, muted));
+            //}
         }
 
         private void onConnectionQuality(SignalResponse signalResponse)
@@ -727,40 +788,16 @@ namespace Client.Sdk.Dotnet.core
 
         private async void onAcceptOffer(SignalResponse signalResponse)
         {
-            //if (subscriberPeerConnection.VideoRemoteTrack != null)
-            //{
-            //    subscriberPeerConnection.removeTrack(subscriberPeerConnection.VideoRemoteTrack);
-            //}
 
             if (subscriberPeerConnection == null)
             {
                 await createSubPeerConnection();
             }
 
-            //VideoEncoderEndPoint vp8videosink = new VideoEncoderEndPoint();
-            //MediaStreamTrack videotrack = new MediaStreamTrack(vp8videosink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            //subscriberPeerConnection!.addTrack(videotrack);
-
-
-            //RTCSessionDescriptionInit rTCSessionDescriptionInit = new RTCSessionDescriptionInit();
-            //rTCSessionDescriptionInit.sdp = signalResponse.Offer.Sdp;
-            //rTCSessionDescriptionInit.type = RTCSdpType.offer;
-
-
             SdpMessage sdpMessage = new SdpMessage();
             sdpMessage.Content = signalResponse.Offer.Sdp;
             sdpMessage.Type = SdpMessageType.Offer;
-            //subscriberPeerConnection.LocalSdpReadytoSend += (sdps) =>
-            //{
-            //    SignalRequest signalRequest = new SignalRequest();
-            //    signalRequest.Answer = new SessionDescription
-            //    {
-            //        Sdp = sdps.Content,
-            //        Type = "answer",
-            //    };
-            //    WebSocketIO.Send(signalRequest.ToByteArray());
-            //    //subscriberPeerConnection.res();
-            //};
+
             await subscriberPeerConnection!.SetRemoteDescriptionAsync(sdpMessage).ContinueWith((t) =>
             {
                 bool result = subscriberPeerConnection.CreateAnswer();

@@ -1,33 +1,20 @@
-锘縰sing Client.Sdk.Dotnet.core;
-using Client.Sdk.Dotnet.hardware;
-using LiveKit.Proto;
-using Microsoft.MixedReality.WebRTC;
-using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.FFmpeg;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using Avalonia.Controls;
+using Avalonia.Threading;
+using Client.Sdk.Dotnet.core;
+using LiveKit.Proto;
 
-namespace Client.Sdk.Dotnet.Example
+namespace Client.Sdk.Dotnet.Example.Avalonia
 {
-    public partial class Form2 : Form
+    public partial class MainWindow : Window
     {
         private Engine engine;
-
-        //private HardWare hardWare = new HardWare();
-        public Form2()
+        public MainWindow()
         {
             InitializeComponent();
-            //hardWare.GetAllScreen();
             engine = new Engine("ws://127.0.0.1:7880", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTA5ODg1MDgsImlzcyI6ImRldmtleSIsIm5hbWUiOiJ0ZXN0X3VzZXIzIiwibmJmIjoxNzUwNjQyOTA4LCJzdWIiOiJ0ZXN0X3VzZXIzIiwidmlkZW8iOnsicm9vbSI6InRlc3Rfcm9vbSIsInJvb21Kb2luIjp0cnVlfX0.TbYGQf6fPCdaesiJ-zco1B2_NGFphO1tecWwWvPj_No");
             InitAsync().ConfigureAwait(false);
         }
@@ -52,14 +39,14 @@ namespace Client.Sdk.Dotnet.Example
         {
             foreach (var item in e)
             {
-                var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == item.Sid);
+                var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == item.Sid);
                 control.Speaking();
             }
         }
 
         private void Engine_onParticipantConnectionQualityUpdated(object? sender, string e)
         {
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e);
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e);
             if (control != null)
             {
                 control.QualityUpdated();
@@ -68,7 +55,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private void Engine_onVideoTrackUnMuted(object? sender, (string, string) e)
         {
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
             if (control != null)
             {
                 control.UnMuteVideo(e.Item2);
@@ -77,7 +64,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private void Engine_onVideoTrackMuted(object? sender, (string, string) e)
         {
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
             if (control != null)
             {
                 control.MuteVideo(e.Item2);
@@ -86,7 +73,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private void Engine_onAudioTrackMuted(object? sender, (string, string) e)
         {
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
             if (control != null)
             {
                 control.MuteAudio(e.Item2);
@@ -95,7 +82,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private void Engine_onAudioTrackUnMuted(object? sender, (string, string) e)
         {
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
             if (control != null)
             {
                 control.UnMuteAudio(e.Item2);
@@ -104,7 +91,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private void Engine_onAudioTrackRemoved(object? sender, (string, string) e)
         {
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
             if (control != null)
             {
                 control.RemoveAudio(e.Item2);
@@ -113,8 +100,8 @@ namespace Client.Sdk.Dotnet.Example
 
         private void Engine_onAudioTrackAdded(object? sender, (string, string) e)
         {
-            var c = this.panelVideoContainer.Controls.OfType<lkUserControl>().ToList();
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
+            var c = this.panelVideoContainer.Children.OfType<lkUserControl>().ToList();
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
             if (control != null)
             {
                 control.AddAudio(e.Item2);
@@ -123,7 +110,7 @@ namespace Client.Sdk.Dotnet.Example
 
         private void Engine_onVideoTrackRemoved(object? sender, (string, string) e)
         {
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
             if (control != null)
             {
                 control.RemoveVideo(e.Item2);
@@ -132,8 +119,8 @@ namespace Client.Sdk.Dotnet.Example
 
         private void Engine_onVideoTrackAdded(object? sender, (string, string) e)
         {
-            var c = this.panelVideoContainer.Controls.OfType<lkUserControl>().ToList();
-            var control = this.panelVideoContainer.Controls.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
+            var c = this.panelVideoContainer.Children.OfType<lkUserControl>().ToList();
+            var control = this.panelVideoContainer.Children.OfType<lkUserControl>().FirstOrDefault(v => v.participantInfo.Sid == e.Item1);
             if (control != null)
             {
                 control.AddVideo(e.Item2);
@@ -147,27 +134,28 @@ namespace Client.Sdk.Dotnet.Example
 
             void AddControl()
             {
-                var control = this.panelVideoContainer.Controls
+                var control = this.panelVideoContainer.Children
                     .OfType<lkUserControl>()
                     .FirstOrDefault(v => v.participantInfo.Identity == e.Identity);
                 if (control == null)
                 {
                     lkUserControl lkUserControl = new(participant: e, engine: engine)
                     {
-                        Dock = DockStyle.Fill,
-                        Name = e.Identity
+                        Name = e.Identity,
+
                     };
-                    this.panelVideoContainer.Controls.Add(lkUserControl);
+                    this.panelVideoContainer.Children.Add(lkUserControl);
                 }
             }
 
-            if (this.panelVideoContainer.InvokeRequired)
+            // 保证在UI线程执行
+            if (Dispatcher.UIThread.CheckAccess())
             {
-                this.panelVideoContainer.Invoke((Action)(AddControl));
+                AddControl();
             }
             else
             {
-                AddControl();
+                Dispatcher.UIThread.Post(AddControl);
             }
         }
     }

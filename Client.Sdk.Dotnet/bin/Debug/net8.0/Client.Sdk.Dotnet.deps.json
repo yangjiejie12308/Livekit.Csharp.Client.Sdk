@@ -12,8 +12,7 @@
           "Grpc.Core": "2.46.6",
           "Grpc.Net.Client": "2.71.0",
           "Grpc.Tools": "2.72.0",
-          "Microsoft.MixedReality.WebRTC": "2.0.2",
-          "SIPSorceryMedia.Encoders": "1.0.0",
+          "Microsoft.MixedReality.WebRTC": "0.1.0",
           "SIPSorceryMedia.FFmpeg": "8.0.10",
           "Serilog.Extensions.Logging": "3.0.1",
           "Serilog.Sinks.Console": "3.1.1"
@@ -170,26 +169,6 @@
           "lib/netstandard2.0/Microsoft.Extensions.Primitives.dll": {
             "assemblyVersion": "2.0.0.0",
             "fileVersion": "2.0.0.17205"
-          }
-        }
-      },
-      "Microsoft.MixedReality.WebRTC/2.0.2": {
-        "runtime": {
-          "lib/netstandard2.0/Microsoft.MixedReality.WebRTC.dll": {
-            "assemblyVersion": "0.1.0.0",
-            "fileVersion": "0.1.0.0"
-          }
-        },
-        "runtimeTargets": {
-          "runtimes/win10-x64/native/mrwebrtc.dll": {
-            "rid": "win10-x64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x86/native/mrwebrtc.dll": {
-            "rid": "win10-x86",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -409,14 +388,11 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "SIPSorceryMedia.Encoders/1.0.0": {
-        "dependencies": {
-          "SIPSorceryMedia.Abstractions": "8.0.7"
-        },
+      "Microsoft.MixedReality.WebRTC/0.1.0": {
         "runtime": {
-          "SIPSorceryMedia.Encoders.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
+          "Microsoft.MixedReality.WebRTC.dll": {
+            "assemblyVersion": "0.1.0.0",
+            "fileVersion": "0.1.0.0"
           }
         }
       }
@@ -518,13 +494,6 @@
       "sha512": "sha512-ukg53qNlqTrK38WA30b5qhw0GD7y3jdI9PHHASjdKyTcBHTevFM2o23tyk3pWCgAV27Bbkm+CPQ2zUe1ZOuYSA==",
       "path": "microsoft.extensions.primitives/2.0.0",
       "hashPath": "microsoft.extensions.primitives.2.0.0.nupkg.sha512"
-    },
-    "Microsoft.MixedReality.WebRTC/2.0.2": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-0InRdeWcRaGc+MkwdhaX/6vIh+Fbjdncl0AsXHjZVFKzxV6eg2zKgt6Kx5eb5ilX9OhQJ0poAG1NqvkngdCPUg==",
-      "path": "microsoft.mixedreality.webrtc/2.0.2",
-      "hashPath": "microsoft.mixedreality.webrtc.2.0.2.nupkg.sha512"
     },
     "Microsoft.NETCore.Platforms/1.1.0": {
       "type": "package",
@@ -722,7 +691,7 @@
       "path": "system.threading.tasks/4.3.0",
       "hashPath": "system.threading.tasks.4.3.0.nupkg.sha512"
     },
-    "SIPSorceryMedia.Encoders/1.0.0": {
+    "Microsoft.MixedReality.WebRTC/0.1.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

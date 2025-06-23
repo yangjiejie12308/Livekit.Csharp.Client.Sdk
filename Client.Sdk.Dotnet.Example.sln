@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Sdk.Dotnet", "Client
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.MixedReality.WebRTC", "MixedReality-WebRTC\libs\Microsoft.MixedReality.WebRTC\Microsoft.MixedReality.WebRTC.csproj", "{547D0804-ABE3-4CCD-901F-7D4791F9830C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Sdk.Dotnet.Example.Avalonia", "Client.Sdk.Dotnet.Example.Avalonia\Client.Sdk.Dotnet.Example.Avalonia.csproj", "{4DF421BD-F4FF-40F9-9F35-EAECBAA9739F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{547D0804-ABE3-4CCD-901F-7D4791F9830C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{547D0804-ABE3-4CCD-901F-7D4791F9830C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{547D0804-ABE3-4CCD-901F-7D4791F9830C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DF421BD-F4FF-40F9-9F35-EAECBAA9739F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DF421BD-F4FF-40F9-9F35-EAECBAA9739F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DF421BD-F4FF-40F9-9F35-EAECBAA9739F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DF421BD-F4FF-40F9-9F35-EAECBAA9739F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

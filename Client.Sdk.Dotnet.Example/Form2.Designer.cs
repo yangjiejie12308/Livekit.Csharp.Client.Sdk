@@ -33,17 +33,15 @@
             // 
             // panelVideoContainer
             // 
-            panelVideoContainer.ColumnCount = 3;
-            panelVideoContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
-            panelVideoContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
-            panelVideoContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
+            panelVideoContainer.ColumnCount = 2;
+            panelVideoContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            panelVideoContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             panelVideoContainer.Dock = DockStyle.Fill;
             panelVideoContainer.Location = new Point(0, 0);
             panelVideoContainer.Name = "panelVideoContainer";
-            panelVideoContainer.RowCount = 3;
-            panelVideoContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            panelVideoContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            panelVideoContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
+            panelVideoContainer.RowCount = 2;
+            panelVideoContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            panelVideoContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             panelVideoContainer.Size = new Size(800, 450);
             panelVideoContainer.TabIndex = 1;
             // 

@@ -27,6 +27,15 @@ namespace Microsoft.MixedReality.WebRTC
         /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// Set the track name.
+        /// </summary>
+        /// <param name="trackName"></param>
+        public void SetName(string trackName)
+        {
+            Name = trackName;
+        }
+
         private protected MediaTrack(PeerConnection peer, string trackName)
         {
             PeerConnection = peer;

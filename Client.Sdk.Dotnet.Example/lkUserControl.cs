@@ -1,4 +1,5 @@
 ﻿using Client.Sdk.Dotnet.core;
+using DirectShowLib;
 using LiveKit.Proto;
 using Microsoft.MixedReality.WebRTC;
 using System;
@@ -18,21 +19,22 @@ namespace Client.Sdk.Dotnet.Example
 {
     public partial class lkUserControl : UserControl
     {
-        public  ParticipantInfo? participantInfo;
-        public  Engine engine;
-        public lkUserControl(ParticipantInfo participant,Engine engine)
+        public ParticipantInfo? participantInfo;
+        public Engine engine;
+        private ConnectionQualityInfo connectionQualityInfo = new ConnectionQualityInfo();
+        public lkUserControl(ParticipantInfo participant, Engine engine)
         {
             InitializeComponent();
             this.participantInfo = participant;
             this.engine = engine;
             this.Identity.Text = participant.Identity;
-     
+
         }
 
         public void AddVideo(string trackId)
         {
 
-            RemoteVideoTrack? videoTrack = this.engine.GetTrackStream(trackId) ;
+            RemoteVideoTrack? videoTrack = this.engine.GetTrackStream(trackId);
 
             if (videoTrack == null) return;
 
@@ -44,6 +46,8 @@ namespace Client.Sdk.Dotnet.Example
                 SizeMode = PictureBoxSizeMode.StretchImage,
                 Dock = DockStyle.Fill,
             };
+
+            AddContextMenu(newVideoBox, trackId);
             void AddControl()
             {
                 this.videoPanels.Controls.Add(newVideoBox);
@@ -64,34 +68,234 @@ namespace Client.Sdk.Dotnet.Example
 
                 var bitMAP = ConvertI420AToBitmap(frame);
 
-                    if (newVideoBox.InvokeRequired)
-                    {
+                if (newVideoBox.InvokeRequired)
+                {
                     newVideoBox.Invoke(new Action(() =>
                         {
                             newVideoBox.Image?.Dispose();
                             newVideoBox.Image = bitMAP;
                         }));
-                    }
-                    else
-                    {
+                }
+                else
+                {
                     newVideoBox.Image?.Dispose();
                     newVideoBox.Image = bitMAP;
-                    }
+                }
             };
 
         }
 
         public void RemoveVideo(string videoTrackName)
         {
-          PictureBox? pictureBox =   this.videoPanels.Controls
-                .OfType<PictureBox>()
-                .FirstOrDefault(pb => pb.Name == videoTrackName);
+            PictureBox? pictureBox = this.videoPanels.Controls
+                  .OfType<PictureBox>()
+                  .FirstOrDefault(pb => pb.Name == videoTrackName);
+
+            void RemoveControl(PictureBox pictureBox)
+            {
+                this.videoPanels.Controls.Remove(pictureBox);
+            }
 
             if (pictureBox != null)
             {
+                if (this.videoPanels.InvokeRequired)
+                {
+                    this.videoPanels.Invoke((Action)(() => RemoveControl(pictureBox)));
+                }
+                else
+                {
+                    RemoveControl(pictureBox);
+                }
                 pictureBox.Image?.Dispose();
-                this.videoPanels.Controls.Remove(pictureBox);
                 pictureBox.Dispose();
+            }
+        }
+
+        public void AddAudio(string trackId)
+        {
+            RemoteAudioTrack? audioTrack = this.engine.GetAudioTrackStream(trackId);
+
+            if (audioTrack == null) return;
+
+
+            void ChangeControl(string text)
+            {
+                this.microphone.Text = text;
+            }
+
+            if (this.microphone.InvokeRequired)
+            {
+                this.microphone.Invoke((Action)(() => ChangeControl("已发布")));
+            }
+            else
+            {
+                ChangeControl("已发布");
+            }
+        }
+        void ChangeControl(string text)
+        {
+            this.microphone.Text = text;
+        }
+        public void RemoveAudio(string trackId)
+        {
+            RemoteAudioTrack? audioTrack = this.engine.GetAudioTrackStream(trackId);
+            if (audioTrack == null) return;
+
+            if (this.microphone.InvokeRequired)
+            {
+                this.microphone.Invoke((Action)(() => ChangeControl("未发布")));
+            }
+            else
+            {
+                ChangeControl("未发布");
+            }
+        }
+
+        public void MuteVideo(string trackId)
+        {
+            PictureBox? pictureBox = this.videoPanels.Controls
+                  .OfType<PictureBox>()
+                  .FirstOrDefault(pb => pb.Name == trackId);
+
+            void RemoveControl(PictureBox pictureBox)
+            {
+                this.videoPanels.Controls.Remove(pictureBox);
+            }
+
+            if (pictureBox != null)
+            {
+                if (this.videoPanels.InvokeRequired)
+                {
+                    this.videoPanels.Invoke((Action)(() => RemoveControl(pictureBox)));
+                }
+                else
+                {
+                    RemoveControl(pictureBox);
+                }
+                pictureBox.Image?.Dispose();
+                pictureBox.Dispose();
+            }
+        }
+
+        public void UnMuteVideo(string trackId)
+        {
+            RemoteVideoTrack? videoTrack = this.engine.GetTrackStream(trackId);
+
+            if (videoTrack == null) return;
+
+            if (this.videoPanels.Controls.OfType<PictureBox>().Any(v => v.Name == trackId)) return;
+
+            PictureBox newVideoBox = new PictureBox
+            {
+                Name = trackId,
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                Dock = DockStyle.Fill,
+            };
+            AddContextMenu(newVideoBox, trackId);
+            void AddControl()
+            {
+                this.videoPanels.Controls.Add(newVideoBox);
+            }
+
+            if (this.videoPanels.InvokeRequired)
+            {
+                this.videoPanels.Invoke((Action)(AddControl));
+            }
+            else
+            {
+                AddControl();
+            }
+
+
+            videoTrack.I420AVideoFrameReady += (frame) =>
+            {
+
+                var bitMAP = ConvertI420AToBitmap(frame);
+
+                if (newVideoBox.InvokeRequired)
+                {
+                    newVideoBox.Invoke(new Action(() =>
+                    {
+                        newVideoBox.Image?.Dispose();
+                        newVideoBox.Image = bitMAP;
+                    }));
+                }
+                else
+                {
+                    newVideoBox.Image?.Dispose();
+                    newVideoBox.Image = bitMAP;
+                }
+            };
+        }
+
+        public void MuteAudio(string trackId)
+        {
+            RemoteAudioTrack? audioTrack = this.engine.GetAudioTrackStream(trackId);
+
+            if (audioTrack == null) return;
+
+            if (this.microphone.InvokeRequired)
+            {
+                this.microphone.Invoke((Action)(() => ChangeControl("micro:已静音")));
+            }
+            else
+            {
+                ChangeControl("micro:已静音");
+            }
+        }
+
+        public void UnMuteAudio(string trackId)
+        {
+            RemoteAudioTrack? audioTrack = this.engine.GetAudioTrackStream(trackId);
+
+            if (audioTrack == null) return;
+
+            if (this.microphone.InvokeRequired)
+            {
+                this.microphone.Invoke((Action)(() => ChangeControl("micro:已开麦")));
+            }
+            else
+            {
+                ChangeControl("micro:已开麦");
+            }
+        }
+
+        public void QualityUpdated()
+        {
+            connectionQualityInfo = engine.GetParticipantConnectionQuality(participantInfo?.Identity ?? string.Empty);
+
+            void ChangeScore(ConnectionQualityInfo connectionQualityInfo)
+            {
+                this.Quality.Text = $"Quality：{connectionQualityInfo.Quality} Score: {connectionQualityInfo.Score}";
+            }
+
+            if (this.Quality.InvokeRequired)
+            {
+                this.Quality.Invoke((Action)(() => ChangeScore(connectionQualityInfo)));
+            }
+            else
+            {
+                ChangeScore(connectionQualityInfo);
+            }
+        }
+
+
+        public void Speaking()
+        {
+            async void Speak()
+            {
+                speaker.Text = "speaking:true";
+                await Task.Delay(2000);
+                speaker.Text = "speaking:false";
+            }
+
+            if (this.speaker.InvokeRequired)
+            {
+                this.speaker.Invoke((Action)(() => Speak()));
+            }
+            else
+            {
+                Speak();
             }
         }
 
@@ -195,5 +399,23 @@ namespace Client.Sdk.Dotnet.Example
             }
         }
 
+        void AddContextMenu(PictureBox pictureBox, string trackId)
+        {
+            ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
+
+            var track = this.engine.RemoteParticipants.Where(v => v.Identity == this.Name).Select(v => v.Tracks.Where(s => s.Sid == trackId).FirstOrDefault()).FirstOrDefault();
+
+            if (track == null) return;
+
+            foreach (var item in track.Layers)
+            {
+                // 添加菜单项
+                ToolStripMenuItem menuItem = new ToolStripMenuItem($"{item.Width}x{item.Height}");
+                menuItem.Click += (sender, e) => engine.Subscribe(trackId, item.Quality);
+                contextMenuStrip.Items.Add(menuItem);
+                contextMenuStrip.Items.Add(new ToolStripSeparator());
+            }
+            pictureBox.ContextMenuStrip = contextMenuStrip;
+        }
     }
 }

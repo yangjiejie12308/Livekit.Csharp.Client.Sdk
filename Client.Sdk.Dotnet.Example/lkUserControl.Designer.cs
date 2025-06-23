@@ -28,36 +28,52 @@
         /// </summary>
         private void InitializeComponent()
         {
-            tableLayoutPanel2 = new TableLayoutPanel();
+            con = new TableLayoutPanel();
+            Quality = new Label();
             microphone = new Label();
             Identity = new Label();
             videoPanels = new TableLayoutPanel();
-            tableLayoutPanel2.SuspendLayout();
+            speaker = new Label();
+            con.SuspendLayout();
             SuspendLayout();
             // 
-            // tableLayoutPanel2
+            // con
             // 
-            tableLayoutPanel2.ColumnCount = 3;
-            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
-            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
-            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
-            tableLayoutPanel2.Controls.Add(microphone, 1, 0);
-            tableLayoutPanel2.Controls.Add(Identity, 0, 0);
-            tableLayoutPanel2.Dock = DockStyle.Bottom;
-            tableLayoutPanel2.Location = new Point(0, 378);
-            tableLayoutPanel2.Name = "tableLayoutPanel2";
-            tableLayoutPanel2.RowCount = 1;
-            tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            tableLayoutPanel2.Size = new Size(441, 41);
-            tableLayoutPanel2.TabIndex = 3;
+            con.ColumnCount = 4;
+            con.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            con.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            con.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            con.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            con.Controls.Add(speaker, 3, 0);
+            con.Controls.Add(Quality, 2, 0);
+            con.Controls.Add(microphone, 1, 0);
+            con.Controls.Add(Identity, 0, 0);
+            con.Dock = DockStyle.Bottom;
+            con.Location = new Point(0, 378);
+            con.Name = "con";
+            con.RowCount = 1;
+            con.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            con.Size = new Size(441, 41);
+            con.TabIndex = 3;
+            // 
+            // Quality
+            // 
+            Quality.AutoSize = true;
+            Quality.Dock = DockStyle.Fill;
+            Quality.Location = new Point(223, 0);
+            Quality.Name = "Quality";
+            Quality.Size = new Size(104, 41);
+            Quality.TabIndex = 2;
+            Quality.Text = "quality:0";
+            Quality.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // microphone
             // 
             microphone.AutoSize = true;
             microphone.Dock = DockStyle.Fill;
-            microphone.Location = new Point(149, 0);
+            microphone.Location = new Point(113, 0);
             microphone.Name = "microphone";
-            microphone.Size = new Size(140, 41);
+            microphone.Size = new Size(104, 41);
             microphone.TabIndex = 1;
             microphone.Text = "micro:Closed";
             microphone.TextAlign = ContentAlignment.MiddleCenter;
@@ -68,44 +84,55 @@
             Identity.Dock = DockStyle.Fill;
             Identity.Location = new Point(3, 0);
             Identity.Name = "Identity";
-            Identity.Size = new Size(140, 41);
+            Identity.Size = new Size(104, 41);
             Identity.TabIndex = 0;
             Identity.Text = "Identity";
             Identity.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // videoPanels
             // 
-            videoPanels.ColumnCount = 3;
-            videoPanels.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
-            videoPanels.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
-            videoPanels.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
+            videoPanels.ColumnCount = 2;
+            videoPanels.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            videoPanels.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             videoPanels.Dock = DockStyle.Fill;
             videoPanels.Location = new Point(0, 0);
             videoPanels.Name = "videoPanels";
-            videoPanels.RowCount = 3;
-            videoPanels.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            videoPanels.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            videoPanels.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
+            videoPanels.RowCount = 2;
+            videoPanels.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            videoPanels.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             videoPanels.Size = new Size(441, 378);
             videoPanels.TabIndex = 4;
+            // 
+            // speaker
+            // 
+            speaker.AutoSize = true;
+            speaker.Dock = DockStyle.Fill;
+            speaker.Location = new Point(333, 0);
+            speaker.Name = "speaker";
+            speaker.Size = new Size(105, 41);
+            speaker.TabIndex = 3;
+            speaker.Text = "speaking:false";
+            speaker.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // lkUserControl
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(videoPanels);
-            Controls.Add(tableLayoutPanel2);
+            Controls.Add(con);
             Name = "lkUserControl";
             Size = new Size(441, 419);
-            tableLayoutPanel2.ResumeLayout(false);
-            tableLayoutPanel2.PerformLayout();
+            con.ResumeLayout(false);
+            con.PerformLayout();
             ResumeLayout(false);
         }
 
         #endregion
-        private TableLayoutPanel tableLayoutPanel2;
+        private TableLayoutPanel con;
         private Label Identity;
         private TableLayoutPanel videoPanels;
         private Label microphone;
+        private Label Quality;
+        private Label speaker;
     }
 }

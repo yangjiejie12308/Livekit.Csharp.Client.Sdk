@@ -8,10 +8,7 @@
     ".NETCoreApp,Version=v8.0": {
       "Client.Sdk.Dotnet.Example/1.0.0": {
         "dependencies": {
-          "Client.Sdk.Dotnet": "1.0.0",
-          "Microsoft.MixedReality.WebRTC": "2.0.2",
-          "SIPSorceryMedia.Encoders": "1.0.0",
-          "mrwebrtc": "2.0.2"
+          "Client.Sdk.Dotnet": "1.0.0"
         },
         "runtime": {
           "Client.Sdk.Dotnet.Example.dll": {}
@@ -167,72 +164,8 @@
           }
         }
       },
-      "Microsoft.MixedReality.WebRTC/2.0.2": {
-        "runtime": {
-          "lib/netstandard2.0/Microsoft.MixedReality.WebRTC.dll": {
-            "assemblyVersion": "0.1.0.0",
-            "fileVersion": "0.1.0.0"
-          }
-        },
-        "runtimeTargets": {
-          "runtimes/win10-x64/native/mrwebrtc.dll": {
-            "rid": "win10-x64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x86/native/mrwebrtc.dll": {
-            "rid": "win10-x86",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          }
-        }
-      },
       "Microsoft.NETCore.Platforms/1.1.0": {},
       "Microsoft.NETCore.Targets/1.1.0": {},
-      "mrwebrtc/2.0.2": {
-        "runtimeTargets": {
-          "runtimes/win10-x64/native/debug/mrwebrtc.dll": {
-            "rid": "win10-x64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x64/native/debug/mrwebrtc.lib": {
-            "rid": "win10-x64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x64/native/release/mrwebrtc.dll": {
-            "rid": "win10-x64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x64/native/release/mrwebrtc.lib": {
-            "rid": "win10-x64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x86/native/debug/mrwebrtc.dll": {
-            "rid": "win10-x86",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x86/native/debug/mrwebrtc.lib": {
-            "rid": "win10-x86",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x86/native/release/mrwebrtc.dll": {
-            "rid": "win10-x86",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win10-x86/native/release/mrwebrtc.lib": {
-            "rid": "win10-x86",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          }
-        }
-      },
       "runtime.native.System/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.1.0",
@@ -452,8 +385,7 @@
           "Google.Protobuf": "3.31.1",
           "Grpc.Core": "2.46.6",
           "Grpc.Net.Client": "2.71.0",
-          "Microsoft.MixedReality.WebRTC": "2.0.2",
-          "SIPSorceryMedia.Encoders": "1.0.0",
+          "Microsoft.MixedReality.WebRTC": "0.1.0",
           "SIPSorceryMedia.FFmpeg": "8.0.10",
           "Serilog.Extensions.Logging": "3.0.1",
           "Serilog.Sinks.Console": "3.1.1"
@@ -465,14 +397,11 @@
           }
         }
       },
-      "SIPSorceryMedia.Encoders/1.0.0": {
-        "dependencies": {
-          "SIPSorceryMedia.Abstractions": "8.0.7"
-        },
+      "Microsoft.MixedReality.WebRTC/0.1.0": {
         "runtime": {
-          "SIPSorceryMedia.Encoders.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
+          "Microsoft.MixedReality.WebRTC.dll": {
+            "assemblyVersion": "0.1.0.0",
+            "fileVersion": "0.1.0.0"
           }
         }
       }
@@ -568,13 +497,6 @@
       "path": "microsoft.extensions.primitives/2.0.0",
       "hashPath": "microsoft.extensions.primitives.2.0.0.nupkg.sha512"
     },
-    "Microsoft.MixedReality.WebRTC/2.0.2": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-0InRdeWcRaGc+MkwdhaX/6vIh+Fbjdncl0AsXHjZVFKzxV6eg2zKgt6Kx5eb5ilX9OhQJ0poAG1NqvkngdCPUg==",
-      "path": "microsoft.mixedreality.webrtc/2.0.2",
-      "hashPath": "microsoft.mixedreality.webrtc.2.0.2.nupkg.sha512"
-    },
     "Microsoft.NETCore.Platforms/1.1.0": {
       "type": "package",
       "serviceable": true,
@@ -588,13 +510,6 @@
       "sha512": "sha512-aOZA3BWfz9RXjpzt0sRJJMjAscAUm3Hoa4UWAfceV9UTYxgwZ1lZt5nO2myFf+/jetYQo4uTP7zS8sJY67BBxg==",
       "path": "microsoft.netcore.targets/1.1.0",
       "hashPath": "microsoft.netcore.targets.1.1.0.nupkg.sha512"
-    },
-    "mrwebrtc/2.0.2": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-Fz5pUUPWxTyzOvVEJwmKDcdcpsgKPoHL5iNWXSR3W8WgLAXRn8zmiEZJ8tzlcxQiCdOnQfid0Q7ZBLQhO1FgLg==",
-      "path": "mrwebrtc/2.0.2",
-      "hashPath": "mrwebrtc.2.0.2.nupkg.sha512"
     },
     "runtime.native.System/4.3.0": {
       "type": "package",
@@ -783,7 +698,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "SIPSorceryMedia.Encoders/1.0.0": {
+    "Microsoft.MixedReality.WebRTC/0.1.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
