@@ -1,0 +1,47 @@
+[gd_scene load_steps=2 format=3 uid="uid://c1bkpuj3ljx2l"]
+
+[ext_resource type="Script" uid="uid://b4dqmmi45xvjf" path="res://LkUserControl.cs" id="1_goohy"]
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 400.0
+offset_bottom = 400.0
+script = ExtResource("1_goohy")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+
+[node name="Identity" type="Label" parent="HBoxContainer"]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Identity"
+
+[node name="microphone" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "micro:未开始"
+
+[node name="Quality" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Quality:Good"
+
+[node name="speaker" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "speaking:false"
+
+[node name="GridContainer" type="GridContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 370.0
+grow_horizontal = 2
+columns = 2
