@@ -1,0 +1,60 @@
+<Project>
+
+  <!-- This needs to go first, before Microsoft.Common.props is imported  -->
+  <PropertyGroup>
+  <!-- TEMP - This breaks NuGET (of course...) -->
+    <!-- <BaseIntermediateOutputPath>..\..\build\Microsoft.MixedReality.WebRTC\UWP\$(Platform)\$(Configuration)</BaseIntermediateOutputPath> -->
+    <OutputPath>..\..\bin\netstandard2.0\$(Configuration)</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Platforms>x64;x86</Platforms>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <Company>Microsoft</Company>
+    <Authors>Mixed Reality Sharing Team</Authors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Platform)'=='x86'">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DisableDeviceTests)'!=''">
+    <DefineConstants>MRSW_EXCLUDE_DEVICE_TESTS</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Deploy native DLL to output folder to run tests -->
+  <ItemGroup>
+    <Content Include="..\..\bin\Win32\$(PlatformTarget)\$(Configuration)\mrwebrtc.dll">
+      <Link>mrwebrtc.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\bin\Win32\$(PlatformTarget)\$(Configuration)\mrwebrtc.pdb">
+      <Link>mrwebrtc.pdb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.0" />
+    <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.16.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\Microsoft.MixedReality.WebRTC\Microsoft.MixedReality.WebRTC.csproj" />
+  </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+</Project>

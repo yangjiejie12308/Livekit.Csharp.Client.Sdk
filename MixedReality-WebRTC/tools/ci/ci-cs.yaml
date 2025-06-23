@@ -1,0 +1,32 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License. See LICENSE in the project root for license information.
+
+# MixedReality-WebRTC build pipeline for C# CI
+# Build the project's libraries as needed and run tests
+
+# Trigger CI on push changes
+trigger:
+  branches:
+    include:
+    - master
+    - release/*
+    exclude:
+    - docs/*
+  paths:
+    include:
+    - libs/Microsoft.MixedReality.WebRTC/*
+    - examples/TestAppUwp/*
+    - tests/Microsoft.MixedReality.WebRTC.Tests/*
+
+# Do not trigger CI on PRs
+pr: none
+
+# Give a unique name to the build each time it runs
+name: ci-cs-$(SourceBranchName)-$(Date:yyyyMMdd)-$(Rev:r)
+
+jobs:
+- template: templates/jobs-cs.yaml
+  parameters:
+    buildAgent: 'Hosted VS2017' # vs2017-win2016
+    buildConfig: 'Debug'
+    testConfig: 'Debug'

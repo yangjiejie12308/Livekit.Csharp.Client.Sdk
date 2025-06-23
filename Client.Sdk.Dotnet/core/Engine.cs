@@ -15,16 +15,13 @@ using Client.Sdk.Dotnet.support.websocket;
 using Google.Protobuf;
 using LiveKit.Proto;
 using Microsoft.MixedReality.WebRTC;
-using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Encoders;
-using SIPSorceryMedia.FFmpeg;
 using static DirectShowLib.MediaSubType;
 
 namespace Client.Sdk.Dotnet.core
 {
     public class Engine : IDisposable
     {
-        private PeerConnection? subscriberPeerConnection;
+        public PeerConnection? subscriberPeerConnection;
 
         private PeerConnection? publisherPeerConnection;
 
@@ -120,12 +117,12 @@ namespace Client.Sdk.Dotnet.core
         }
 
         public LiveKit.Proto.Room room { get; set; }
-        public event EventHandler<LiveKit.Proto.Room> LiveKitConnectionQualityUpdated;
+        public event EventHandler<LiveKit.Proto.Room> LiveKitRoomUpdated;
         private void UpdateRoom(LiveKit.Proto.Room room)
         {
             this.room = room;
-            if (LiveKitConnectionQualityUpdated != null)
-                LiveKitConnectionQualityUpdated?.Invoke(this, room);
+            if (LiveKitRoomUpdated != null)
+                LiveKitRoomUpdated?.Invoke(this, room);
         }
 
         public ObservableCollection<ParticipantInfo> RemoteParticipants { get; set; } = new ObservableCollection<ParticipantInfo>();
@@ -270,61 +267,6 @@ namespace Client.Sdk.Dotnet.core
             audioTransceiver.DesiredDirection = Transceiver.Direction.SendReceive;
 
 
-            //MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            //MediaStreamTrack audoTrack = new MediaStreamTrack(testPatternSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
-            //publisherPeerConnection.addTrack(videoTrack);
-            //publisherPeerConnection.addTrack(audoTrack);
-
-            //testPatternSource.OnVideoSourceEncodedSample += publisherPeerConnection.SendVideo;
-            //testPatternSource.OnAudioSourceEncodedSample += publisherPeerConnection.SendAudio;
-
-            //publisherPeerConnection.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
-            //publisherPeerConnection.OnAudioFormatsNegotiated += (formats) => testPatternSource.SetAudioSourceFormat(formats.First());
-
-            //publisherPeerConnection.onicecandidate += (candidate) =>
-            //{
-            //    Debug.WriteLine(publisherPeerConnection.signalingState);
-            //    if (candidate == null || publisherPeerConnection.signalingState == RTCSignalingState.closed)
-            //    {
-            //        return;
-            //    }
-            //    var trickleCandidate = new IceCandidate
-            //    {
-            //        candidate = "candidate:" + candidate.candidate,
-            //        sdpMid = candidate.sdpMid ?? "0",
-            //        sdpMLineIndex = candidate.sdpMLineIndex,
-            //    };
-            //    SignalRequest signalRequest = new SignalRequest
-            //    {
-            //        Trickle = new TrickleRequest
-            //        {
-            //            Target = SignalTarget.Publisher,
-            //            CandidateInit = JsonSerializer.Serialize(trickleCandidate)
-            //        },
-            //    };
-            //    Debug.WriteLine($"PulishbPeer Send ICE candidate: {signalRequest}");
-
-            //    WebSocketIO.Send(signalRequest.ToByteArray());
-            //};
-            //publisherPeerConnection.oniceconnectionstatechange += async (state) =>
-            //{
-            //    if (state == RTCIceConnectionState.connected)
-            //    {
-            //        // 连接成功
-            //        Debug.WriteLine($"publisherPeerConnection: connected");
-            //        await testPatternSource.StartVideo();
-            //        await testPatternSource.StartAudio();
-            //    }
-            //    else if (state == RTCIceConnectionState.failed)
-            //    {
-            //        publisherPeerConnection.Close("ice disconnection");
-            //    }
-            //    else if (state == RTCIceConnectionState.closed)
-            //    {
-            //        // 连接关闭
-            //    }
-            //};
-
             publisherPeerConnection.Connected += async () =>
             {
                 Debug.WriteLine($"publisherPeerConnection: connected");
@@ -380,8 +322,6 @@ namespace Client.Sdk.Dotnet.core
 
         }
 
-        VideoEncoderEndPoint videoEP = new VideoEncoderEndPoint();
-
         private async Task createSubPeerConnection()
         {
 
@@ -413,12 +353,12 @@ namespace Client.Sdk.Dotnet.core
             };
             subscriberPeerConnection.LocalSdpReadytoSend += (sdps) =>
             {
-                //Debug.WriteLine($"local_sdp:{sdps.Content}");
+                Debug.WriteLine($"local_sdp:{sdps.Type}");
                 SignalRequest signalRequest = new SignalRequest();
                 signalRequest.Answer = new SessionDescription
                 {
                     Sdp = sdps.Content,
-                    Type = "answer",
+                    Type = sdps.Type==SdpMessageType.Answer?  "answer":"offer",
                 };
                 WebSocketIO.Send(signalRequest.ToByteArray());
                 //subscriberPeerConnection.res();
@@ -429,13 +369,13 @@ namespace Client.Sdk.Dotnet.core
             };
             subscriberPeerConnection.VideoTrackAdded += (track) =>
             {
-                UpdateParticipantStream(track.Name, track);
+                VideoTrackAdded(track.Name, track);
             };
             subscriberPeerConnection.VideoTrackRemoved += (t, track) =>
             {
-                Debug.WriteLine($"Audio track removed: {track.Name}");
-                UpdateParticipantStream(track.Name, track);
+                VideoTrackRemoved(track.Name, track);
             };
+
             await subscriberPeerConnection.InitializeAsync(configuration);
             Transceiver videoTransceiver = subscriberPeerConnection.AddTransceiver(MediaKind.Video);
             //videoTransceiver.LocalVideoTrack = localVideoTrack;
@@ -443,52 +383,6 @@ namespace Client.Sdk.Dotnet.core
             Transceiver audioTransceiver = subscriberPeerConnection.AddTransceiver(MediaKind.Audio);
             //audioTransceiver.LocalAudioTrack = localAudioTrack;
             audioTransceiver.DesiredDirection = Transceiver.Direction.ReceiveOnly;
-
-
-
-
-
-            //MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
-            //subscriberPeerConnection = new RTCPeerConnection(configuration);
-            //subscriberPeerConnection.addTrack(videoTrack);
-            //subscriberPeerConnection.OnVideoFormatsNegotiated += (formats) =>
-            //  videoEP.SetVideoSinkFormat(formats.First());
-            //subscriberPeerConnection.onicecandidate += async (candidate) =>
-            //{
-
-            //    var trickleCandidate = new IceCandidate
-            //    {
-            //        candidate = "candidate:" + candidate.candidate,
-            //        sdpMid = candidate.sdpMid ?? "0",
-            //        sdpMLineIndex = candidate.sdpMLineIndex,
-            //    };
-            //    SignalRequest signalRequest = new SignalRequest
-            //    {
-            //        Trickle = new TrickleRequest
-            //        {
-            //            Target = SignalTarget.Subscriber,
-            //            CandidateInit = JsonSerializer.Serialize(trickleCandidate),
-            //        },
-            //    };
-
-            //    WebSocketIO.Send(signalRequest.ToByteArray());
-            //};
-
-            //subscriberPeerConnection.oniceconnectionstatechange += async (state) =>
-            //{
-            //    if (state == RTCIceConnectionState.connected)
-            //    {
-            //        Debug.WriteLine("订阅轨道连接成功!");
-            //    }
-            //    else if (state == RTCIceConnectionState.failed)
-            //    {
-            //        subscriberPeerConnection.Close("ice disconnection");
-            //    }
-            //    else if (state == RTCIceConnectionState.closed)
-            //    {
-            //        // 连接关闭
-            //    }
-            //};
 
         }
 
@@ -582,7 +476,6 @@ namespace Client.Sdk.Dotnet.core
         private async void onData(byte[] data)
         {
             SignalResponse? signalResponse = SignalResponse.Parser.ParseFrom(data);
-            Debug.WriteLine($"Received signal : {signalResponse?.MessageCase}");
             switch (signalResponse.MessageCase)
             {
                 case SignalResponse.MessageOneofCase.Join:
@@ -615,7 +508,7 @@ namespace Client.Sdk.Dotnet.core
                     onRoomUpdate(signalResponse);
                     break;
                 case SignalResponse.MessageOneofCase.Update:
-                    // 处理房间更新的响应
+                    Debug.WriteLine(signalResponse.ToString());
                     onUpdate(signalResponse);
                     break;
                 case SignalResponse.MessageOneofCase.TrackUnpublished:
@@ -679,41 +572,50 @@ namespace Client.Sdk.Dotnet.core
             UpdateTrackSubscribedCodecs(trackSid, subscribedCodecs);
         }
 
-        public Dictionary<string, RemoteVideoTrack> TrackStreams = new Dictionary<string, RemoteVideoTrack>();
+        public event EventHandler<(string, string)> onVideoTrackAdded;
+        public event EventHandler<(string,string)> onVideoTrackRemoved;
 
-        public event EventHandler<RemoteVideoTrack> onStreamUpdated;
-        private void UpdateParticipantStream(string trackId, RemoteVideoTrack videoTrack)
+        private void VideoTrackAdded(string trackId, RemoteVideoTrack videoTrack)
         {
-            if (TrackStreams.ContainsKey(trackId))
-            {
-                TrackStreams.Remove(trackId);
-            }
-            else
-            {
-                TrackStreams.Add(trackId, videoTrack);
-            }
-            if (onStreamUpdated != null)
-            {
-                onStreamUpdated?.Invoke(this, videoTrack);
-            }
+            Debug.WriteLine($"Video track added: {trackId}");
+        }
+
+        private void VideoTrackRemoved(string trackId, RemoteVideoTrack videoTrack)
+        {
+            Debug.WriteLine($"Video track removed: {trackId}");
         }
 
         public RemoteVideoTrack? GetTrackStream(string trackId)
         {
-            if (TrackStreams.TryGetValue(trackId, out var videoEncoderEndPoints))
-            {
-                return videoEncoderEndPoints;
-            }
-            return null;
+            return subscriberPeerConnection.RemoteVideoTracks.FirstOrDefault(v => v.Name == trackId);
         }
-
 
         private void onStreamStateUpdate(List<StreamStateInfo> streamStateInfos)
         {
             foreach (var streamState in streamStateInfos)
             {
+                Debug.WriteLine($"Stream state updated for participant {streamState.ToString()}");
 
-                //Debug.WriteLine($"Stream state updated for participant {streamState.ToString()}");
+                if (streamState.State == StreamState.Active)
+                {
+                    if (RemoteParticipants.FirstOrDefault(v => v.Sid == streamState.ParticipantSid).Tracks.FirstOrDefault(v => v.Sid == streamState.TrackSid).Type == TrackType.Video)
+                    {
+                        if (onVideoTrackAdded != null)
+                        {
+                            onVideoTrackAdded.Invoke(this, (streamState.ParticipantSid, streamState.TrackSid));
+                        }
+                    }
+                }
+                else
+                {
+                    if (RemoteParticipants.FirstOrDefault(v => v.Sid == streamState.ParticipantSid).Tracks.FirstOrDefault(v => v.Sid == streamState.TrackSid).Type == TrackType.Video)
+                    {
+                        if (onVideoTrackRemoved != null)
+                        {
+                            onVideoTrackRemoved.Invoke(this, (streamState.ParticipantSid, streamState.TrackSid));
+                        }
+                    }
+                }
 
                 //Stream state updated for participant { "participantSid": "PA_d8Z3swcgQpcd", "trackSid": "TR_VSoERp55Wn4MMk" }
 
@@ -835,7 +737,6 @@ namespace Client.Sdk.Dotnet.core
                 await createSubPeerConnection();
             }
 
-
             //VideoEncoderEndPoint vp8videosink = new VideoEncoderEndPoint();
             //MediaStreamTrack videotrack = new MediaStreamTrack(vp8videosink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             //subscriberPeerConnection!.addTrack(videotrack);
@@ -844,6 +745,7 @@ namespace Client.Sdk.Dotnet.core
             //RTCSessionDescriptionInit rTCSessionDescriptionInit = new RTCSessionDescriptionInit();
             //rTCSessionDescriptionInit.sdp = signalResponse.Offer.Sdp;
             //rTCSessionDescriptionInit.type = RTCSdpType.offer;
+
 
             SdpMessage sdpMessage = new SdpMessage();
             sdpMessage.Content = signalResponse.Offer.Sdp;
@@ -868,7 +770,6 @@ namespace Client.Sdk.Dotnet.core
                     subscriberPeerConnection.Close();
                 }
             });
-
         }
 
         private async Task onReceiveAnswer(SignalResponse signalResponse)
@@ -892,6 +793,7 @@ namespace Client.Sdk.Dotnet.core
             joinResponse = signalResponse.Join;
             UpdateRoom(signalResponse.Join.Room);
             UpdateLocalParticipant(joinResponse.Participant);
+            UpdateRemoteParticipants(signalResponse.Join.OtherParticipants.ToList());
             createIceServer();
         }
 

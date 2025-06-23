@@ -1,0 +1,27 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+#
+# Follow the official WebRTC style for consistency, except for include blocks
+# which are preserved (headers are sorted within a block).
+# See http://clang.llvm.org/docs/ClangFormatStyleOptions.html for reference.
+#
+BasedOnStyle: Chromium
+IncludeBlocks: Preserve
+---
+Language: Java
+BasedOnStyle: Google
+---
+Language: ObjC
+BasedOnStyle: Google
+BinPackParameters: false
+BinPackArguments: false
+ColumnLimit: 100
+ObjCBlockIndentWidth: 2
+AllowAllParametersOfDeclarationOnNextLine: true
+AlignOperands: false
+AlwaysBreakBeforeMultilineStrings: false
+AllowShortFunctionsOnASingleLine: Inline
+BreakBeforeTernaryOperators: false
+IndentWrappedFunctionNames: true
+ContinuationIndentWidth: 4
+ObjCSpaceBeforeProtocolList: true

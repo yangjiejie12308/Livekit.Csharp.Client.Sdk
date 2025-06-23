@@ -1,0 +1,142 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+# [TEMPLATE] Compile C# library Microsoft.MixedReality.WebRTC.dll and run tests
+
+parameters: 
+  buildAgent: ''
+  # Build platform is irrelevant
+  # Build arch is always AnyCPU
+  buildConfig: ''      # Debug|Release
+  testConfig: ''       # Debug|Release
+ 
+jobs:
+
+# Compile Microsoft.MixedReality.WebRTC.dll
+- job: cs_${{parameters.buildConfig}}_test_${{parameters.testConfig}}
+  timeoutInMinutes: 60
+  pool:
+    name: ${{parameters.buildAgent}}
+    demands: vstest
+  variables:
+  - group: MixedReality-WebRTC-ArtifactConfig
+  steps:
+  - checkout: self
+
+  # Download mrwebrtc.dll (Win32-x64-Debug)
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download mrwebrtc library (Win32-x64-Debug)'
+    inputs:
+      source: specific
+      project: $(ArtifactConfig.Project)
+      definition: $(ArtifactConfig.CppDefinitionId)
+      runVersion: 'latest'
+      artifact: 'mrwebrtc_Win32-x64-Debug'
+      patterns: '**/*.@(pdb|dll)'
+      path: 'bin/Win32/x64/Debug'
+
+  # Download mrwebrtc.dll (UWP-x64-Debug)
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download mrwebrtc library (UWP-x64-Debug)'
+    inputs:
+      source: specific
+      project: $(ArtifactConfig.Project)
+      definition: $(ArtifactConfig.CppDefinitionId)
+      runVersion: 'latest'
+      artifact: 'mrwebrtc_UWP-x64-Debug'
+      patterns: '**/*.@(pdb|dll)'
+      path: 'bin/UWP/x64/Debug'
+
+  # Download mrwebrtc.dll (UWP-x64-Release)
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download mrwebrtc library (UWP-x64-Release)'
+    inputs:
+      source: specific
+      project: $(ArtifactConfig.Project)
+      definition: $(ArtifactConfig.CppDefinitionId)
+      runVersion: 'latest'
+      artifact: 'mrwebrtc_UWP-x64-Release'
+      patterns: '**/*.@(pdb|dll)'
+      path: 'bin/UWP/x64/Release'
+
+  # Build Microsoft.MixedReality.WebRTC (Debug, incremental build)
+  - task: DotNetCoreCLI@2
+    displayName: 'Build C# WebRTC lib (AnyCPU-Debug) [incremental]'
+    inputs:
+      projects: libs/Microsoft.MixedReality.WebRTC/Microsoft.MixedReality.WebRTC.csproj
+      arguments: '-f netstandard2.0 -c Debug'
+      workingDirectory: libs/Microsoft.MixedReality.WebRTC/
+
+  # Build Microsoft.MixedReality.WebRTC (Release, full build)
+  - task: DotNetCoreCLI@2
+    condition: succeededOrFailed() # Build even previous task failed
+    displayName: 'Build C# WebRTC lib (AnyCPU-Release) [full build]'
+    inputs:
+      projects: libs/Microsoft.MixedReality.WebRTC/Microsoft.MixedReality.WebRTC.csproj
+      arguments: '-f netstandard2.0 --no-incremental -c Release'
+      workingDirectory: libs/Microsoft.MixedReality.WebRTC/
+
+  # Move artifacts to publish only what needed
+  - powershell: |
+      # Ensure destination folder exists
+      New-Item -Path "$env:STAGEDIR" -ItemType Directory -Force -ErrorAction Ignore
+
+      # Copy DLL, PDB, and Intellisense docs (XML) from Release build
+      Copy-Item -Force -Path "$env:SOURCEDIR/Microsoft.MixedReality.WebRTC.dll" -Destination "$env:STAGEDIR"
+      Copy-Item -Force -Path "$env:SOURCEDIR/Microsoft.MixedReality.WebRTC.pdb" -Destination "$env:STAGEDIR"
+      Copy-Item -Force -Path "$env:SOURCEDIR/Microsoft.MixedReality.WebRTC.xml" -Destination "$env:STAGEDIR"
+
+    displayName: 'Stage C# WebRTC lib'
+    condition: variables['publish']
+    env:
+      SOURCEDIR: 'bin/netstandard2.0/Release'
+      STAGEDIR: '$(Build.ArtifactStagingDirectory)/Microsoft.MixedReality.WebRTC/'
+
+  # Publish Microsoft.MixedReality.WebRTC.dll and associated files (PDB, ...)
+  - task: PublishPipelineArtifact@0
+    condition: variables['publish']
+    displayName: 'Publish C# WebRTC lib'
+    inputs:
+      artifactName: 'Microsoft.MixedReality.WebRTC'
+      targetPath: '$(Build.ArtifactStagingDirectory)/Microsoft.MixedReality.WebRTC'
+
+  # Build TestAppUWP (Debug)
+  - task: MSBuild@1
+    condition: succeededOrFailed() # Build even previous task failed
+    displayName: 'Build C# sample TestAppUWP (x64-Debug)'
+    inputs:
+      msbuildVersion: latest
+      msbuildArchitecture: x64
+      solution: examples/TestAppUwp/Microsoft.MixedReality.WebRTC.TestAppUWP.csproj
+      platform: x64
+      configuration: Debug
+      msbuildArguments: -restore -p:AppxPackageSigningEnabled=false
+
+  # Build TestAppUWP (Release)
+  - task: MSBuild@1
+    condition: succeededOrFailed() # Build even previous task failed
+    displayName: 'Build C# sample TestAppUWP (x64-Release) [.NET Native]'
+    inputs:
+      msbuildVersion: latest
+      msbuildArchitecture: x64
+      solution: examples/TestAppUwp/Microsoft.MixedReality.WebRTC.TestAppUWP.csproj
+      platform: x64
+      configuration: Release
+      msbuildArguments: '-restore -p:AppxPackageSigningEnabled=false'
+
+  # Build C# tests
+  - task: DotNetCoreCLI@2
+    displayName: 'Build C# Tests (x64-${{parameters.testConfig}}) [incremental]'
+    inputs:
+      projects: tests/Microsoft.MixedReality.WebRTC.Tests/Microsoft.MixedReality.WebRTC.Tests.csproj
+      arguments: '-c ${{parameters.testConfig}} -p:DisableDeviceTests=1 -p:Platform=x64'
+      workingDirectory: tests/Microsoft.MixedReality.WebRTC.Tests/
+
+  # Run tests (Win32-x64-Release)
+  - task: VSTest@2
+    displayName: 'C# Testing (mrwebrtc Win32-x64-Release / C# ${{parameters.testConfig}})'
+    inputs:
+      testAssemblyVer2: Microsoft.MixedReality.WebRTC.Tests.dll
+      searchFolder: bin/netstandard2.0/${{parameters.testConfig}}/
+      runOnlyImpactedTests: false
+

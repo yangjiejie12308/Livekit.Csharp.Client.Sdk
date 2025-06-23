@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Sdk.Dotnet.Example",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Sdk.Dotnet", "Client.Sdk.Dotnet\Client.Sdk.Dotnet.csproj", "{C7800332-3100-4D03-9C93-BFB72D7B006D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorceryMedia.Encoders", "SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj", "{C419D4C6-A573-9100-53A2-0515FBA1ACE5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.MixedReality.WebRTC", "MixedReality-WebRTC\libs\Microsoft.MixedReality.WebRTC\Microsoft.MixedReality.WebRTC.csproj", "{547D0804-ABE3-4CCD-901F-7D4791F9830C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{C7800332-3100-4D03-9C93-BFB72D7B006D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7800332-3100-4D03-9C93-BFB72D7B006D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7800332-3100-4D03-9C93-BFB72D7B006D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C419D4C6-A573-9100-53A2-0515FBA1ACE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C419D4C6-A573-9100-53A2-0515FBA1ACE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C419D4C6-A573-9100-53A2-0515FBA1ACE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C419D4C6-A573-9100-53A2-0515FBA1ACE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{547D0804-ABE3-4CCD-901F-7D4791F9830C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{547D0804-ABE3-4CCD-901F-7D4791F9830C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{547D0804-ABE3-4CCD-901F-7D4791F9830C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{547D0804-ABE3-4CCD-901F-7D4791F9830C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

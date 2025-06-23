@@ -12,12 +12,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.MixedReality.WebRTC" Version="2.0.2" />
-    <PackageReference Include="mrwebrtc" Version="2.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Client.Sdk.Dotnet\Client.Sdk.Dotnet.csproj" />
-    <ProjectReference Include="..\SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj" />
   </ItemGroup>
 
 </Project>

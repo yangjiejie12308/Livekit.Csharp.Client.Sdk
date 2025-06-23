@@ -1,0 +1,40 @@
+<Page
+    x:Class="TestAppUwp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TestAppUwp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:winmc="using:Windows.Media.Capture"
+    xmlns:webrtc="using:Microsoft.MixedReality.WebRTC"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Page.Resources>
+        <local:MenuItemTemplateSelector x:Key="CategoryTemplate">
+            <local:MenuItemTemplateSelector.ItemTemplate>
+                <DataTemplate x:DataType="local:Category" >
+                    <NavigationViewItem Content="{x:Bind Name}">
+                        <NavigationViewItem.Icon>
+                            <SymbolIcon Symbol="{x:Bind Glyph}"/>
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                </DataTemplate>
+            </local:MenuItemTemplateSelector.ItemTemplate >
+        </local:MenuItemTemplateSelector>
+        <!--<DataTemplate x:Key="AudioTrackItemTemplate" x:DataType="local:AudioTrackViewModel">
+            <TextBlock Text="{x:Bind DisplayName}" Margin="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" />
+        </DataTemplate>
+        <DataTemplate x:Key="VideoTrackItemTemplate" x:DataType="local:VideoTrackViewModel">
+            <TextBlock Text="{x:Bind DisplayName}" Margin="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" />
+        </DataTemplate>-->
+    </Page.Resources>
+    <Grid x:Name="LayoutRoot">
+        <NavigationView x:Name="navigationView"
+                        MenuItemsSource="{x:Bind Categories, Mode=OneTime}"
+                        MenuItemTemplateSelector="{StaticResource CategoryTemplate}"
+                        ItemInvoked="OnNavigationViewItemInvoked"
+                        OpenPaneLength="170" IsBackButtonVisible="Collapsed">
+            <Frame x:Name="rootFrame" CacheSize="2" />
+        </NavigationView>
+    </Grid>
+</Page>
