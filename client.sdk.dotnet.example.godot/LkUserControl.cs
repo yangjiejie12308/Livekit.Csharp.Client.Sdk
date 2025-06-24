@@ -9,7 +9,6 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using static Microsoft.MixedReality.WebRTC.PeerConnection;
 
 public partial class LkUserControl : Control
 {
@@ -30,15 +29,20 @@ public partial class LkUserControl : Control
 	public void AddVideo(string trackId)
 	{
 
-		RemoteVideoTrack? videoTrack = this.engine.GetTrackStream(trackId);
+		RemoteVideoTrack videoTrack = this.engine.GetTrackStream(trackId);
 
 		if (videoTrack == null) return;
 
-		if (this.GetNode<Sprite2D>(trackId) != null) return;
+		if (grid.GetNodeOrNull<TextureRect>($"{trackId}") != null) return;
 
-		Sprite2D newVideoBox = new Sprite2D
+		TextureRect newVideoBox = new TextureRect
 		{
 			Name = trackId,
+			StretchMode = TextureRect.StretchModeEnum.Scale, // 保持比例填充并裁剪超出部分
+			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, // 可选，通常默认即可
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+			CustomMinimumSize = new Godot.Vector2(200, 150) // 设置按钮最小尺寸
 		};
 
 		videoTrack.I420AVideoFrameReady += (frame) =>
@@ -46,26 +50,27 @@ public partial class LkUserControl : Control
 
 			var bitMAP = ConvertI420AToBitmap(frame);
 			var texture = ImageTexture.CreateFromImage(bitMAP);
-			newVideoBox.Texture = texture;
+			newVideoBox.CallDeferred("set_texture", texture);
+
 		};
 
 		CallDeferred(nameof(AddControl), newVideoBox);
 	}
 
-	void AddControl(Sprite2D newVideoBox)
+	void AddControl(TextureRect newVideoBox)
 	{
 
 		grid.AddChild(newVideoBox);
 	}
 
-	void RemoveControl(Godot.Sprite2D pictureBox)
+	void RemoveControl(Godot.TextureRect pictureBox)
 	{
 		grid.RemoveChild(pictureBox);
 	}
 
 	public void RemoveVideo(string videoTrackName)
 	{
-		var control = grid.GetNode<Sprite2D>(videoTrackName);
+		var control = grid.GetNodeOrNull<TextureRect>($"{videoTrackName}");
 
 		if (control != null)
 		{
@@ -83,12 +88,12 @@ public partial class LkUserControl : Control
 	}
 	void ChangeControl(string text)
 	{
-		var control = this.GetNode<Label>("microphone");
+		var control = this.GetNode<Label>("HBoxContainer/microphone");
 		control.Text = text;
 	}
 	public void RemoveAudio(string trackId)
 	{
-		RemoteAudioTrack? audioTrack = this.engine.GetAudioTrackStream(trackId);
+		RemoteAudioTrack audioTrack = this.engine.GetAudioTrackStream(trackId);
 		if (audioTrack == null) return;
 
 		CallDeferred(nameof(ChangeControl), "未发布");
@@ -96,8 +101,7 @@ public partial class LkUserControl : Control
 
 	public void MuteVideo(string trackId)
 	{
-		var control = grid.GetNode<Sprite2D>(trackId);
-
+		var control = grid.GetNodeOrNull<TextureRect>($"{trackId}");
 		if (control != null)
 		{
 
@@ -111,11 +115,14 @@ public partial class LkUserControl : Control
 
 		if (videoTrack == null) return;
 
-		if (this.GetNode<Sprite2D>(trackId) != null) return;
+		if (grid.GetNodeOrNull<TextureRect>($"{trackId}") != null) return;
 
-		Sprite2D newVideoBox = new Sprite2D
+		TextureRect newVideoBox = new TextureRect
 		{
 			Name = trackId,
+			StretchMode = TextureRect.StretchModeEnum.Scale, // 保持比例填充并裁剪超出部分
+			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, // 可选，通常默认即可
+			CustomMinimumSize = new Godot.Vector2(200, 150) // 设置按钮最小尺寸
 		};
 
 		videoTrack.I420AVideoFrameReady += (frame) =>
@@ -123,7 +130,7 @@ public partial class LkUserControl : Control
 
 			var bitMAP = ConvertI420AToBitmap(frame);
 			var texture = ImageTexture.CreateFromImage(bitMAP);
-			newVideoBox.Texture = texture;
+			newVideoBox.CallDeferred("set_texture", texture);
 		};
 
 		CallDeferred(nameof(AddControl), newVideoBox);
@@ -133,7 +140,7 @@ public partial class LkUserControl : Control
 
 	public void MuteAudio(string trackId)
 	{
-		RemoteAudioTrack? audioTrack = this.engine.GetAudioTrackStream(trackId);
+		RemoteAudioTrack audioTrack = this.engine.GetAudioTrackStream(trackId);
 
 		if (audioTrack == null) return;
 
@@ -157,7 +164,7 @@ public partial class LkUserControl : Control
 
 	void ChangeScore(string str)
 	{
-		var Quality = this.GetNode<Label>("Quality");
+		var Quality = this.GetNode<Label>("HBoxContainer/Quality");
 		Quality.Text = str;
 	}
 
@@ -170,7 +177,7 @@ public partial class LkUserControl : Control
 
 	async void Speak()
 	{
-		var speaker = this.GetNode<Label>("speaker");
+		var speaker = this.GetNode<Label>("HBoxContainer/speaker");
 		speaker.Text = "speaking:true";
 		await Task.Delay(2000);
 		speaker.Text = "speaking:false";
@@ -197,7 +204,7 @@ public partial class LkUserControl : Control
 		byte[] rgbaData = new byte[bgraData.Length];
 		BgraToRgba(bgraData, rgbaData);
 
-		var image = Godot.Image.CreateFromData(width, height, false, Godot.Image.Format.Rgba8, rgbaData);
+		var image = Image.CreateFromData(width, height, false, Image.Format.Rgba8, rgbaData);
 		return image;
 
 	}
