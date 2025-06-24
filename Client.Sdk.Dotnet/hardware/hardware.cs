@@ -3,11 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FFmpeg.AutoGen;
-using Serilog.Extensions.Logging;
-using Serilog;
 using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.FFmpeg;
+using Microsoft.MixedReality.WebRTC;
 
 namespace Client.Sdk.Dotnet.hardware
 {
@@ -16,35 +13,82 @@ namespace Client.Sdk.Dotnet.hardware
     /// </summary>
     public class HardWare
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = HardWare.AddConsoleLogger();
 
-        public HardWare()
+        public static async Task<IReadOnlyList<VideoCaptureDevice>> GetVideoCaptureDevicesAsync()
         {
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, @"E:\TDG\FFmpeg.AutoGen\FFmpeg\bin\x64", logger);
+            try
+            {
+                var devices = await DeviceVideoTrackSource.GetCaptureDevicesAsync();
+                return devices;
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                Console.WriteLine($"获取视频设备失败: {ex.Message}");
+                return new List<VideoCaptureDevice>();
+            }
         }
 
-        public List<Camera>? GetAllCamera()
+        public static async Task<DeviceAudioTrackSource?> GetLocalAudioTrackAsync()
         {
-
-            return FFmpegCameraManager.GetCameraDevices();
+            try
+            {
+                // 创建本地音频轨道
+                var audioTrack = await DeviceAudioTrackSource.CreateAsync();
+                return audioTrack;
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                Console.WriteLine($"创建本地音频轨道失败: {ex.Message}");
+                return null;
+            }
         }
 
-        public List<SIPSorceryMedia.FFmpeg.Monitor>? GetAllScreen()
+        public static async Task<DeviceVideoTrackSource?> GetLocalVideoTrackAsync()
         {
-            return FFmpegMonitorManager.GetMonitorDevices();
+            try
+            {
+                // 创建本地视频轨道
+                var videoTrack = await DeviceVideoTrackSource.CreateAsync();
+                return videoTrack;
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                Console.WriteLine($"创建本地视频轨道失败: {ex.Message}");
+                return null;
+            }
         }
 
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        public static LocalAudioTrack? GetLocalAudioTrack(DeviceAudioTrackSource source)
         {
-            var seriLogger = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            var factory = new SerilogLoggerFactory(seriLogger);
-            SIPSorcery.LogFactory.Set(factory);
-            return factory.CreateLogger<HardWare>();
+            try
+            {
+                // 创建本地音频轨道
+                return LocalAudioTrack.CreateFromSource(source, new LocalAudioTrackInitConfig());
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                Console.WriteLine($"创建本地音频轨道失败: {ex.Message}");
+                return null;
+            }
+        }
 
+        public static LocalVideoTrack? GetLocalVideoTrack(DeviceVideoTrackSource source)
+        {
+            try
+            {
+                // 创建本地视频轨道
+                return LocalVideoTrack.CreateFromSource(source, new LocalVideoTrackInitConfig());
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                Console.WriteLine($"创建本地视频轨道失败: {ex.Message}");
+                return null;
+            }
         }
     }
 }

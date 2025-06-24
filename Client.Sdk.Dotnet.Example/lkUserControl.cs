@@ -1,5 +1,4 @@
 ﻿using Client.Sdk.Dotnet.core;
-using DirectShowLib;
 using LiveKit.Proto;
 using Microsoft.MixedReality.WebRTC;
 using System;

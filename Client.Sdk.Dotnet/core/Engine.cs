@@ -15,8 +15,6 @@ using Client.Sdk.Dotnet.support.websocket;
 using Google.Protobuf;
 using LiveKit.Proto;
 using Microsoft.MixedReality.WebRTC;
-using static DirectShowLib.MediaSubType;
-using static Microsoft.MixedReality.WebRTC.PeerConnection;
 
 namespace Client.Sdk.Dotnet.core
 {
@@ -289,11 +287,12 @@ namespace Client.Sdk.Dotnet.core
             _pingTimer.Start();
         }
 
-        AudioTrackSource microphoneSource = null;
-        VideoTrackSource webcamSource = null;
-
-        LocalAudioTrack localAudioTrack = null;
-        LocalVideoTrack localVideoTrack = null;
+        public AudioTrackSource microphoneSource = null;
+        public VideoTrackSource webcamSource = null;
+        public Transceiver audioTransceiver = null;
+        public Transceiver videoTransceiver = null;
+        public LocalAudioTrack localAudioTrack = null;
+        public LocalVideoTrack localVideoTrack = null;
 
         public void Subscribe(string trackId, VideoQuality Quality)
         {
@@ -311,38 +310,12 @@ namespace Client.Sdk.Dotnet.core
 
         public async Task createPublisherPeerConnection()
         {
-            //var testPatternSource = new FFmpegFileSource(@"E:\TDG\sipsorcery\examples\WebRTCExamples\WebRTCDaemon\media\max_intro.mp4", true, new AudioEncoder());
-            //testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
-            // 创建发布者和订阅者的 PeerConnection
+
             publisherPeerConnection = new PeerConnection();
-            await publisherPeerConnection.InitializeAsync(configuration);
-            Transceiver audioTransceiver = null;
-            Transceiver videoTransceiver = null;
-            webcamSource = await DeviceVideoTrackSource.CreateAsync();
-            var videoTrackConfig = new LocalVideoTrackInitConfig
-            {
-                trackName = "webcam_track"
-            };
-            localVideoTrack = LocalVideoTrack.CreateFromSource(webcamSource, videoTrackConfig);
-            microphoneSource = await DeviceAudioTrackSource.CreateAsync();
-            var audioTrackConfig = new LocalAudioTrackInitConfig
-            {
-                trackName = "microphone_track"
-            };
-            localAudioTrack = LocalAudioTrack.CreateFromSource(microphoneSource, audioTrackConfig);
-            videoTransceiver = publisherPeerConnection.AddTransceiver(MediaKind.Video);
-            videoTransceiver.LocalVideoTrack = localVideoTrack;
-            videoTransceiver.DesiredDirection = Transceiver.Direction.SendReceive;
-            audioTransceiver = publisherPeerConnection.AddTransceiver(MediaKind.Audio);
-            audioTransceiver.LocalAudioTrack = localAudioTrack;
-            audioTransceiver.DesiredDirection = Transceiver.Direction.SendReceive;
-
-
             publisherPeerConnection.Connected += async () =>
             {
                 Debug.WriteLine($"publisherPeerConnection: connected");
             };
-
             publisherPeerConnection.IceCandidateReadytoSend += (candidate) =>
             {
 
@@ -358,26 +331,12 @@ namespace Client.Sdk.Dotnet.core
 
                 WebSocketIO.Send(signalRequest.ToByteArray());
             };
-
             publisherPeerConnection.IceStateChanged += (IceConnectionState newState) =>
             {
                 Console.WriteLine($"ICE state: {newState}");
             };
-
-
-            SignalRequest signalRequest = new SignalRequest();
-            AddTrackRequest addTrackRequest = new AddTrackRequest();
-            addTrackRequest.Cid = webcamSource.Name ?? "default-video-cid";
-            addTrackRequest.Name = "microphone";
-            addTrackRequest.Type = TrackType.Video;
-            addTrackRequest.Source = TrackSource.Camera;
-            addTrackRequest.DisableRed = false;
-            addTrackRequest.Stream = "screenshare_video";
-            addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
-            signalRequest.AddTrack = addTrackRequest;
-            WebSocketIO.Send(signalRequest.ToByteArray());
             publisherPeerConnection.LocalSdpReadytoSend += (peer) =>
-            { //await publisherPeerConnection.(result2);
+            {
                 SignalRequest signalRequest3 = new SignalRequest();
                 signalRequest3.Offer = new SessionDescription
                 {
@@ -385,12 +344,73 @@ namespace Client.Sdk.Dotnet.core
                     Type = "offer"
                 };
                 WebSocketIO.Send(signalRequest3.ToByteArray());
-                //publisherPeerConnection.restartIce();
                 Debug.WriteLine($"subscriberPeerConnection: connected");
             };
+            await publisherPeerConnection.InitializeAsync(configuration);
+        }
+
+        public async Task OpenAudio()
+        {
+            if (publisherPeerConnection == null)
+            {
+                await createPublisherPeerConnection();
+            }
+
+            microphoneSource = await DeviceAudioTrackSource.CreateAsync();
+            var audioTrackConfig = new LocalAudioTrackInitConfig
+            {
+            };
+            localAudioTrack = LocalAudioTrack.CreateFromSource(microphoneSource, audioTrackConfig);
+            audioTransceiver = publisherPeerConnection.AddTransceiver(MediaKind.Audio);
+            audioTransceiver.LocalAudioTrack = localAudioTrack;
+            audioTransceiver.DesiredDirection = Transceiver.Direction.SendOnly;
+            localAudioTrack.Name = Guid.NewGuid().ToString();
+
+            SignalRequest signalRequest = new SignalRequest();
+            AddTrackRequest addTrackRequest = new AddTrackRequest();
+            addTrackRequest.Cid = localAudioTrack.Name ?? "default-video-cid";
+            addTrackRequest.Name = microphoneSource.Name ?? "microphone";
+            addTrackRequest.Type = TrackType.Audio;
+            addTrackRequest.Source = TrackSource.Microphone;
+            addTrackRequest.DisableRed = false;
+            addTrackRequest.Stream = $"{localAudioTrack.Name}_screenshare_audio";
+            addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
+            signalRequest.AddTrack = addTrackRequest;
+            WebSocketIO.Send(signalRequest.ToByteArray());
+
             var result2 = publisherPeerConnection.CreateOffer();
+        }
 
+        public async Task OpenVideo()
+        {
+            if (publisherPeerConnection == null)
+            {
+                await createPublisherPeerConnection();
+            }
 
+            webcamSource = await DeviceVideoTrackSource.CreateAsync();
+            var videoTrackConfig = new LocalVideoTrackInitConfig
+            {
+            };
+            localVideoTrack = LocalVideoTrack.CreateFromSource(webcamSource, videoTrackConfig);
+            videoTransceiver = publisherPeerConnection.AddTransceiver(MediaKind.Video);
+            videoTransceiver.LocalVideoTrack = localVideoTrack;
+            videoTransceiver.DesiredDirection = Transceiver.Direction.SendOnly;
+            localVideoTrack.Name = Guid.NewGuid().ToString();
+
+            SignalRequest signalRequest = new SignalRequest();
+            AddTrackRequest addTrackRequest = new AddTrackRequest();
+            addTrackRequest.Cid = localVideoTrack.Name ?? "default-video-cid";
+            addTrackRequest.Name = webcamSource.Name ?? "camera";
+            addTrackRequest.Type = TrackType.Video;
+            addTrackRequest.Source = TrackSource.Camera;
+            addTrackRequest.DisableRed = false;
+            addTrackRequest.Stream = $"{localAudioTrack.Name}_screenshare_video";
+            addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
+            signalRequest.AddTrack = addTrackRequest;
+            WebSocketIO.Send(signalRequest.ToByteArray());
+
+            var result2 = publisherPeerConnection.CreateOffer();
         }
 
         private async Task createSubPeerConnection()
@@ -472,7 +492,6 @@ namespace Client.Sdk.Dotnet.core
             audioTransceiver.DesiredDirection = Transceiver.Direction.ReceiveOnly;
 
         }
-
 
         private async Task<Uri> GetBuildUri(string uriString, string token, bool reconnect = false,
             bool validate = false,
