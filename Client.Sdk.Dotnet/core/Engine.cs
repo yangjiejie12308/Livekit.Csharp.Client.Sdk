@@ -15,6 +15,8 @@ using Client.Sdk.Dotnet.support.websocket;
 using Google.Protobuf;
 using LiveKit.Proto;
 using Microsoft.MixedReality.WebRTC;
+using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.FFmpeg;
 
 namespace Client.Sdk.Dotnet.core
 {
@@ -411,6 +413,50 @@ namespace Client.Sdk.Dotnet.core
             WebSocketIO.Send(signalRequest.ToByteArray());
 
             var result2 = publisherPeerConnection.CreateOffer();
+        }
+
+        public async Task OpenScreenShare()
+        {
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL, @"E:\TDG\client-sdk-dotnet\Client.Sdk.Dotnet\dll");
+            //if (publisherPeerConnection == null)
+            //{
+            //    await createPublisherPeerConnection();
+            //}
+
+            //webcamSource = await DeviceVideoTrackSource.CreateAsync();
+            //var videoTrackConfig = new LocalVideoTrackInitConfig
+            //{
+            //};
+            //localVideoTrack = LocalVideoTrack.CreateFromSource(webcamSource, videoTrackConfig);
+            //videoTransceiver = publisherPeerConnection.AddTransceiver(MediaKind.Video);
+            //videoTransceiver.LocalVideoTrack = localVideoTrack;
+            //videoTransceiver.DesiredDirection = Transceiver.Direction.SendOnly;
+            //localVideoTrack.Name = Guid.NewGuid().ToString();
+
+            //List<SIPSorceryMedia.FFmpeg.Monitor>? monitors = FFmpegMonitorManager.GetMonitorDevices();
+            //FFmpegScreenSource videoSource = new FFmpegScreenSource(monitors[0].Path, monitors[0].Rect, 10);
+
+            //VideoTrackSource videoTrackSource = new VideoTrackSource(videoSource);
+
+            //localVideoTrack = LocalVideoTrack.CreateFromSource(videoTrackSource, new LocalVideoTrackInitConfig());
+            //videoTransceiver = publisherPeerConnection.AddTransceiver(MediaKind.Video);
+            //videoTransceiver.DesiredDirection = Transceiver.Direction.SendOnly;
+            //localVideoTrack.Name = Guid.NewGuid().ToString();
+
+
+            //SignalRequest signalRequest = new SignalRequest();
+            //AddTrackRequest addTrackRequest = new AddTrackRequest();
+            //addTrackRequest.Cid = localVideoTrack.Name ?? "default-video-cid";
+            //addTrackRequest.Name = webcamSource.Name ?? "camera";
+            //addTrackRequest.Type = TrackType.Video;
+            //addTrackRequest.Source = TrackSource.Camera;
+            //addTrackRequest.DisableRed = false;
+            //addTrackRequest.Stream = $"{localAudioTrack.Name}_screenshare_video";
+            //addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
+            //signalRequest.AddTrack = addTrackRequest;
+            //WebSocketIO.Send(signalRequest.ToByteArray());
+
+            //var result2 = publisherPeerConnection.CreateOffer();
         }
 
         private async Task createSubPeerConnection()
