@@ -407,7 +407,7 @@ namespace Client.Sdk.Dotnet.core
             addTrackRequest.Type = TrackType.Video;
             addTrackRequest.Source = TrackSource.Camera;
             addTrackRequest.DisableRed = false;
-            addTrackRequest.Stream = $"{localAudioTrack.Name}_screenshare_video";
+            addTrackRequest.Stream = $"{localVideoTrack.Name}_screenshare_video";
             addTrackRequest.BackupCodecPolicy = BackupCodecPolicy.Simulcast;
             signalRequest.AddTrack = addTrackRequest;
             WebSocketIO.Send(signalRequest.ToByteArray());

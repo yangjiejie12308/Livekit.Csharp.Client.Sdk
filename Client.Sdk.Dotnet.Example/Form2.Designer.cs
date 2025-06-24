@@ -106,10 +106,10 @@
             // 
             // webcamera
             // 
-            webcamera.Dock = DockStyle.Top;
+            webcamera.Dock = DockStyle.Fill;
             webcamera.Location = new Point(0, 0);
             webcamera.Name = "webcamera";
-            webcamera.Size = new Size(386, 141);
+            webcamera.Size = new Size(386, 138);
             webcamera.TabIndex = 4;
             webcamera.TabStop = false;
             // 
