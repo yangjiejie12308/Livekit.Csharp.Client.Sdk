@@ -18,7 +18,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Client.Sdk.Dotnet.core;
-using DirectShowLib;
 using LiveKit.Proto;
 using Microsoft.MixedReality.WebRTC;
 

@@ -86,7 +86,6 @@ public partial class MainWindow : Node2D
 	private void Engine_onParticipantConnectionQualityUpdated(object? sender, string e)
 	{
 
-		// 用匿名方法推到主线程
 		CallDeferred(nameof(UpdateParticipantQuality), e);
 
 	}

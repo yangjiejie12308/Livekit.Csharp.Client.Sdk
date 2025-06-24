@@ -13,7 +13,6 @@ using Microsoft.MixedReality.WebRTC;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
-using DirectShowLib;
 
 namespace Client.Sdk.Dotnet.Example.Avalonia;
 
